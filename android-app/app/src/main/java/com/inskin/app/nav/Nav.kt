@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.*
+import androidx.navigation.NavHostController
 import com.inskin.app.nfc.NfcController
 import com.inskin.app.ui.ReadScreen
 import com.inskin.app.ui.WriteScreen

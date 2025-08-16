@@ -1,4 +1,6 @@
 __pycache__/
 *.pyc
-
-android-app/gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.jar
+android-app/.gradle/
+android-app/build/
+.gradle/
