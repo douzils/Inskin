@@ -55,14 +55,18 @@ class NfcController(private val activity: Activity) {
   }
 
   /** Écrit une charge NDEF complète sur le tag courant. Retourne null si ok ou message d’erreur. */
-  fun writeNdef(tag: Tag, payload: NdefUtils.NdefBuild): String? = try {
-    val ndef = Ndef.get(tag) ?: return "Tag non NDEF"
-    ndef.connect()
-    val msg = NdefUtils.build(payload)
-    if (!ndef.isWritable) return "Tag en lecture seule"
-    if (ndef.maxSize < msg.toByteArray().size) return "Payload trop grand pour ce tag"
-    ndef.writeNdefMessage(msg)
-    ndef.close()
-    null
-  } catch (e: Exception) { e.message ?: "Écriture échouée" }
+  fun writeNdef(tag: Tag, payload: NdefUtils.NdefBuild): String? {
+    return try {
+      val ndef = Ndef.get(tag) ?: return "Tag non NDEF"
+      ndef.connect()
+      val msg = NdefUtils.build(payload)
+      if (!ndef.isWritable) return "Tag en lecture seule"
+      if (ndef.maxSize < msg.toByteArray().size) return "Payload trop grand pour ce tag"
+      ndef.writeNdefMessage(msg)
+      ndef.close()
+      null
+    } catch (e: Exception) {
+      e.message ?: "Écriture échouée"
+    }
+  }
 }
