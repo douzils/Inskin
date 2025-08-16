@@ -4,3 +4,5 @@ gradle/wrapper/gradle-wrapper.jar
 android-app/.gradle/
 android-app/build/
 .gradle/
+
+*.apk
