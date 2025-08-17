@@ -2,28 +2,22 @@
   <uses-feature android:name="android.hardware.nfc" android:required="false"/>
   <uses-permission android:name="android.permission.NFC"/>
 
-  <application android:label="@string/app_name" android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+  <application
+      android:label="@string/app_name"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher_round"
+      android:theme="@style/Theme.Inskin">
     <activity android:name=".MainActivity" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
 
-      <!-- Optionnel: réveille l’app sur tags NDEF -->
+      <!-- Optional: wake app on NDEF text/plain -->
       <intent-filter>
         <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <data android:mimeType="text/plain"/>
-      </intent-filter>
-      <intent-filter>
-        <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
-        <category android:name="android.intent.category.DEFAULT"/>
-        <data android:scheme="http"/>
-      </intent-filter>
-      <intent-filter>
-        <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
-        <category android:name="android.intent.category.DEFAULT"/>
-        <data android:scheme="https"/>
       </intent-filter>
     </activity>
   </application>
