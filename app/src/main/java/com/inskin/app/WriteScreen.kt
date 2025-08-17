@@ -5,6 +5,9 @@ package com.inskin.app
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -42,10 +45,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
 private val Context.writeDataStore by preferencesDataStore("write_items")
 private val WRITE_ITEMS_KEY = stringPreferencesKey("write_items_json")
-
 /**
  * Main screen for creating a list of [WriteItem] and writing them to a tag.
  */
