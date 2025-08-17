@@ -13,4 +13,6 @@ data class TagInfo(
     val used: Int,
     val writable: Boolean,
     val readonly: Boolean,
+    /** Human readable payloads of NDEF records present on the tag. */
+    val records: List<String> = emptyList(),
 )
