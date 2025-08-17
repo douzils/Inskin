@@ -41,10 +41,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
 private val Context.writeDataStore by preferencesDataStore("write_items")
 private val WRITE_ITEMS_KEY = stringPreferencesKey("write_items_json")
-
 /**
  * Main screen for creating a list of [WriteItem] and writing them to a tag.
  */
