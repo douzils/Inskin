@@ -14,10 +14,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.IOException
 
-/**
- * ViewModel keeping track of the last NFC tag discovered and providing helpers
- * to write NDEF messages.
- */
 class NfcViewModel(application: Application) : AndroidViewModel(application) {
     private var lastTag: Tag? = null
 
@@ -26,8 +22,11 @@ class NfcViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateFromTag(tag: Tag) {
         lastTag = tag
+
         val ndef = Ndef.get(tag)
-        val type = ndef?.type
+        val uid = tag.id?.joinToString("") { "%02X".format(it) } ?: ""
+        val type = ndef?.type ?: "Unknown"
+        val techs = tag.techList.toList()
         val size = ndef?.maxSize ?: 0
         val used = ndef?.cachedNdefMessage?.toByteArray()?.size ?: 0
         val writable = ndef?.isWritable == true
@@ -124,7 +123,7 @@ class NfcViewModel(application: Application) : AndroidViewModel(application) {
         val bytes = message.toByteArray()
         if (ndef.maxSize < bytes.size) {
             ndef.close()
-            throw IOException("Tag capacity ${'$'}{ndef.maxSize} < ${'$'}{bytes.size}")
+            throw IOException("Tag capacity ${ndef.maxSize} < ${bytes.size}")
         }
         if (!ndef.isWritable) {
             ndef.close()
