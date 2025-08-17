@@ -1,0 +1,19 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+string btn_write
+string copy_uid
+string send_feedback
+string share
+string tab_read
+string tab_settings
+string tab_write
+string waiting_scan
+string write_success
+string write_text_hint
+string write_url_hint
+style Theme.Inskin
