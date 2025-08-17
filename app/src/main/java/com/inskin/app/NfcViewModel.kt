@@ -27,8 +27,8 @@ class NfcViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         lastTag = tag
-        val uid = tag.id?.joinToString(separator = "") { b -> "%02X".format(b) }
-        val techs = tag.techList?.toList().orEmpty()
+        val uid: String? = tag.id?.joinToString(separator = "") { b -> "%02X".format(b) }
+        val techs: List<String> = tag.techList?.toList().orEmpty()
         val ndef = Ndef.get(tag)
         val uid = tag.id?.joinToString("") { "%02X".format(it) } ?: ""
         val type = ndef?.type ?: "Unknown"
