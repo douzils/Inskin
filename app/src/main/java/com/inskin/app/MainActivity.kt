@@ -1,8 +1,8 @@
-package com.inskin.app
+﻿package com.inskin.app
 
-import android.nfc.Ndef
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.tech.Ndef
 import android.nfc.tech.NfcA
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,17 +11,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-/**
- * Main entry point for the application. While the activity is in the
- * foreground we enable NFC reader mode so that scanned tags are routed to the
- * app instead of launching their own action (for example opening a URL in the
- * browser). Information extracted from the tag is stored in [tagInfo] and is
- * displayed by composables.
- */
+// Assure-toi que ces imports pointent bien vers tes fichiers :
+import com.inskin.app.InskinTheme
+import com.inskin.app.InskinNav
+
 class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     private var nfcAdapter: NfcAdapter? = null
 
-    // Holds information about the last scanned tag
+    // Dernier tag scanné (observable par Compose)
     private var tagInfo by mutableStateOf<TagInfo?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +26,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         setContent {
             InskinTheme {
-                // Pass the latest tag info down to the navigation graph
+                // InskinNav doit accepter un paramètre optionnel: tagInfo: TagInfo? = null
                 InskinNav(tagInfo)
             }
         }
@@ -37,7 +34,6 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
     override fun onResume() {
         super.onResume()
-        // Enable reader mode so tags are delivered directly to this activity
         nfcAdapter?.enableReaderMode(
             this,
             this,
@@ -54,18 +50,13 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         nfcAdapter?.disableReaderMode(this)
     }
 
-    /**
-     * Called whenever a tag is discovered while reader mode is enabled.
-     * Extracts information about the tag and updates [tagInfo] so the UI can
-     * display it.
-     */
     override fun onTagDiscovered(tag: Tag) {
-        val id = tag.id.joinToString("") { String.format("%02X", it) }
+        val id = tag.id.joinToString("") { "%02X".format(it) }
         val techList = tag.techList.map { it.substringAfterLast('.') }
 
         val nfcA = NfcA.get(tag)
-        val atqa = nfcA?.atqa?.joinToString("") { String.format("%02X", it) } ?: "N/A"
-        val sak = nfcA?.sak?.let { String.format("0x%02X", it) } ?: "N/A"
+        val atqa = nfcA?.atqa?.joinToString("") { "%02X".format(it) } ?: "N/A"
+        val sak  = nfcA?.sak?.let { "0x%02X".format(it) } ?: "N/A"
 
         val ndef = Ndef.get(tag)
         val format = if (ndef != null) "NDEF" else "Inconnu"
@@ -90,4 +81,3 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         runOnUiThread { tagInfo = info }
     }
 }
-

@@ -30,11 +30,9 @@ sealed class Screen(val route: String, val label: String) {
  * passed down so the read screen can display it.
  */
 @Composable
-fun InskinNav(tagInfo: TagInfo?) {
+fun InskinNav(tagInfo: TagInfo? = null) {
     val navController = rememberNavController()
-    Scaffold(
-        bottomBar = { BottomBar(navController) }
-    ) { padding ->
+    Scaffold(bottomBar = { BottomBar(navController) }) { padding ->
         NavHost(
             navController = navController,
             startDestination = Screen.Read.route,
@@ -46,6 +44,7 @@ fun InskinNav(tagInfo: TagInfo?) {
         }
     }
 }
+
 
 @Composable
 private fun BottomBar(navController: NavHostController) {

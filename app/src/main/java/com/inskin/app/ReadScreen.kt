@@ -1,4 +1,6 @@
-package com.inskin.app
+﻿package com.inskin.app
+import androidx.compose.animation.core.animateFloat
+
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -87,14 +89,14 @@ fun ReadScreen(tagInfo: TagInfo? = null) {
                 Spacer(Modifier.height(16.dp))
                 InfoRow("Type de Tag", tagInfo.type)
                 InfoRow("Technologie disponible", tagInfo.tech)
-                InfoRow("Numéro de Série", tagInfo.serial)
+                InfoRow("NumÃ©ro de SÃ©rie", tagInfo.serial)
                 InfoRow("ATQA", tagInfo.atqa)
                 InfoRow("SAK", tagInfo.sak)
-                InfoRow("Format de données", tagInfo.format)
+                InfoRow("Format de donnÃ©es", tagInfo.format)
                 Spacer(Modifier.height(8.dp))
                 MemoryBar(tagInfo.size, tagInfo.used)
                 InfoRow("Taille", "${tagInfo.used}/${tagInfo.size} octets")
-                InfoRow("Écriture Possible", if (tagInfo.isWritable) "Oui" else "Non")
+                InfoRow("Ã‰criture Possible", if (tagInfo.isWritable) "Oui" else "Non")
                 InfoRow("Lecture Seule possible", if (tagInfo.isReadOnly) "Oui" else "Non")
             }
         }
