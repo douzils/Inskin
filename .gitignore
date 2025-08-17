@@ -6,3 +6,6 @@ android-app/build/
 .gradle/
 
 *.apk
+
+/app/build/
+/.kotlin/
