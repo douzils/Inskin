@@ -53,10 +53,8 @@ fun ReadScreen(tagInfoFlow: StateFlow<TagInfo?>) {
         val alpha by transition.animateFloat(
             initialValue = 0.3f,
             targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1000),
-                repeatMode = RepeatMode.Reverse
-            ), label = "alpha"
+            animationSpec = infiniteRepeatable(animation = tween(1000), repeatMode = RepeatMode.Reverse),
+            label = "alpha"
         )
         Column(
             modifier = Modifier
@@ -110,20 +108,23 @@ fun ReadScreen(tagInfoFlow: StateFlow<TagInfo?>) {
                 ) {
                     Text(stringResource(R.string.share))
                 }
+                context.startActivity(Intent.createChooser(send, null))
+            }) {
+                Text("Partager")
             }
         }
     }
 }
 
-@Preview
+/* PREVIEWS (facultatif) */
 @Composable
+@Preview
 private fun PreviewWaiting() {
-    val flow = MutableStateFlow<TagInfo?>(null)
-    ReadScreen(flow)
+    ReadScreen(MutableStateFlow(null))
 }
 
-@Preview
 @Composable
+@Preview
 private fun PreviewWithTag() {
     val info = TagInfo("NDEF", listOf("android.nfc.tech.Ndef"), "DEADBEEF", null, null, 1024, 128, true, false, emptyList())
     val flow = MutableStateFlow<TagInfo?>(info)

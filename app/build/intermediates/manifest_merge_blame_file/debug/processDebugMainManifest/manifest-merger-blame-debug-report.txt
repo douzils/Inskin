@@ -1,0 +1,180 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.inskin.app"
+4    android:versionCode="1"
+5    android:versionName="0.1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-feature
+11-->H:\Inskin\app\src\main\AndroidManifest.xml:2:3-79
+12        android:name="android.hardware.nfc"
+12-->H:\Inskin\app\src\main\AndroidManifest.xml:2:17-52
+13        android:required="false" />
+13-->H:\Inskin\app\src\main\AndroidManifest.xml:2:53-77
+14
+15    <uses-permission android:name="android.permission.NFC" />
+15-->H:\Inskin\app\src\main\AndroidManifest.xml:3:3-59
+15-->H:\Inskin\app\src\main\AndroidManifest.xml:3:20-57
+16
+17    <permission
+17-->[androidx.core:core:1.13.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\e23db1c0535cd958d4d5a23428cc08c4\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+18        android:name="com.inskin.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+18-->[androidx.core:core:1.13.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\e23db1c0535cd958d4d5a23428cc08c4\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+19        android:protectionLevel="signature" />
+19-->[androidx.core:core:1.13.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\e23db1c0535cd958d4d5a23428cc08c4\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+20
+21    <uses-permission android:name="com.inskin.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+21-->[androidx.core:core:1.13.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\e23db1c0535cd958d4d5a23428cc08c4\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+21-->[androidx.core:core:1.13.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\e23db1c0535cd958d4d5a23428cc08c4\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+22
+23    <application
+23-->H:\Inskin\app\src\main\AndroidManifest.xml:5:3-29:19
+24        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+24-->[androidx.core:core:1.13.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\e23db1c0535cd958d4d5a23428cc08c4\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+25        android:debuggable="true"
+26        android:extractNativeLibs="false"
+27        android:icon="@mipmap/ic_launcher"
+27-->H:\Inskin\app\src\main\AndroidManifest.xml:7:7-41
+28        android:label="@string/app_name"
+28-->H:\Inskin\app\src\main\AndroidManifest.xml:6:7-39
+29        android:roundIcon="@mipmap/ic_launcher_round"
+29-->H:\Inskin\app\src\main\AndroidManifest.xml:8:7-52
+30        android:theme="@style/Theme.Inskin" >
+30-->H:\Inskin\app\src\main\AndroidManifest.xml:9:7-42
+31        <activity
+31-->H:\Inskin\app\src\main\AndroidManifest.xml:10:5-28:18
+32            android:name="com.inskin.app.MainActivity"
+32-->H:\Inskin\app\src\main\AndroidManifest.xml:10:15-43
+33            android:exported="true" >
+33-->H:\Inskin\app\src\main\AndroidManifest.xml:10:44-67
+34            <intent-filter>
+34-->H:\Inskin\app\src\main\AndroidManifest.xml:11:7-14:23
+35                <action android:name="android.intent.action.MAIN" />
+35-->H:\Inskin\app\src\main\AndroidManifest.xml:12:9-60
+35-->H:\Inskin\app\src\main\AndroidManifest.xml:12:17-58
+36
+37                <category android:name="android.intent.category.LAUNCHER" />
+37-->H:\Inskin\app\src\main\AndroidManifest.xml:13:9-68
+37-->H:\Inskin\app\src\main\AndroidManifest.xml:13:19-66
+38            </intent-filter>
+39
+40            <!-- Optional: wake app on NDEF text/plain -->
+41            <intent-filter>
+41-->H:\Inskin\app\src\main\AndroidManifest.xml:17:9-21:25
+42                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+42-->H:\Inskin\app\src\main\AndroidManifest.xml:18:11-70
+42-->H:\Inskin\app\src\main\AndroidManifest.xml:18:19-68
+43
+44                <category android:name="android.intent.category.DEFAULT" />
+44-->H:\Inskin\app\src\main\AndroidManifest.xml:19:11-69
+44-->H:\Inskin\app\src\main\AndroidManifest.xml:19:21-67
+45
+46                <data android:mimeType="text/plain" />
+46-->H:\Inskin\app\src\main\AndroidManifest.xml:20:11-48
+46-->H:\Inskin\app\src\main\AndroidManifest.xml:20:17-46
+47            </intent-filter>
+48            <intent-filter>
+48-->H:\Inskin\app\src\main\AndroidManifest.xml:22:9-27:25
+49                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+49-->H:\Inskin\app\src\main\AndroidManifest.xml:18:11-70
+49-->H:\Inskin\app\src\main\AndroidManifest.xml:18:19-68
+50
+51                <category android:name="android.intent.category.DEFAULT" />
+51-->H:\Inskin\app\src\main\AndroidManifest.xml:19:11-69
+51-->H:\Inskin\app\src\main\AndroidManifest.xml:19:21-67
+52
+53                <data android:scheme="http" />
+53-->H:\Inskin\app\src\main\AndroidManifest.xml:20:11-48
+53-->H:\Inskin\app\src\main\AndroidManifest.xml:25:17-38
+54                <data android:scheme="https" />
+54-->H:\Inskin\app\src\main\AndroidManifest.xml:20:11-48
+54-->H:\Inskin\app\src\main\AndroidManifest.xml:25:17-38
+55            </intent-filter>
+56        </activity>
+57        <activity
+57-->[androidx.compose.ui:ui-tooling-android:1.7.5] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\53ffe746343affaf7cad228a3fe803b8\transformed\ui-tooling-release\AndroidManifest.xml:23:9-25:39
+58            android:name="androidx.compose.ui.tooling.PreviewActivity"
+58-->[androidx.compose.ui:ui-tooling-android:1.7.5] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\53ffe746343affaf7cad228a3fe803b8\transformed\ui-tooling-release\AndroidManifest.xml:24:13-71
+59            android:exported="true" />
+59-->[androidx.compose.ui:ui-tooling-android:1.7.5] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\53ffe746343affaf7cad228a3fe803b8\transformed\ui-tooling-release\AndroidManifest.xml:25:13-36
+60
+61        <provider
+61-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+62            android:name="androidx.startup.InitializationProvider"
+62-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+63            android:authorities="com.inskin.app.androidx-startup"
+63-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+64            android:exported="false" >
+64-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+65            <meta-data
+65-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+66                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+66-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+67                android:value="androidx.startup" />
+67-->[androidx.emoji2:emoji2:1.3.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\0f3042a52d4968738554dff67c01505e\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+68            <meta-data
+68-->[androidx.lifecycle:lifecycle-process:2.8.5] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\277595a259857fac4df19c66d3a03b90\transformed\lifecycle-process-2.8.5\AndroidManifest.xml:29:13-31:52
+69                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+69-->[androidx.lifecycle:lifecycle-process:2.8.5] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\277595a259857fac4df19c66d3a03b90\transformed\lifecycle-process-2.8.5\AndroidManifest.xml:30:17-78
+70                android:value="androidx.startup" />
+70-->[androidx.lifecycle:lifecycle-process:2.8.5] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\277595a259857fac4df19c66d3a03b90\transformed\lifecycle-process-2.8.5\AndroidManifest.xml:31:17-49
+71            <meta-data
+71-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+72                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+72-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+73                android:value="androidx.startup" />
+73-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+74        </provider>
+75
+76        <service
+76-->[androidx.room:room-runtime:2.6.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\34e3d5d31faa4121a40fff8dee76a0bb\transformed\room-runtime-2.6.1\AndroidManifest.xml:24:9-28:63
+77            android:name="androidx.room.MultiInstanceInvalidationService"
+77-->[androidx.room:room-runtime:2.6.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\34e3d5d31faa4121a40fff8dee76a0bb\transformed\room-runtime-2.6.1\AndroidManifest.xml:25:13-74
+78            android:directBootAware="true"
+78-->[androidx.room:room-runtime:2.6.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\34e3d5d31faa4121a40fff8dee76a0bb\transformed\room-runtime-2.6.1\AndroidManifest.xml:26:13-43
+79            android:exported="false" />
+79-->[androidx.room:room-runtime:2.6.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\34e3d5d31faa4121a40fff8dee76a0bb\transformed\room-runtime-2.6.1\AndroidManifest.xml:27:13-37
+80
+81        <receiver
+81-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+82            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+82-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+83            android:directBootAware="false"
+83-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+84            android:enabled="true"
+84-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+85            android:exported="true"
+85-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+86            android:permission="android.permission.DUMP" >
+86-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+87            <intent-filter>
+87-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+88                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+88-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+88-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+89            </intent-filter>
+90            <intent-filter>
+90-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+91                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+91-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+91-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+92            </intent-filter>
+93            <intent-filter>
+93-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+94                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+94-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+94-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+95            </intent-filter>
+96            <intent-filter>
+96-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+97                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+97-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+97-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\abf48e8b8bdc3b153705b5080e3aa1d5\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+98            </intent-filter>
+99        </receiver>
+100    </application>
+101
+102</manifest>
