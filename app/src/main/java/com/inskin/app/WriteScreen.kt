@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Button
@@ -135,7 +136,7 @@ fun WriteScreen(vm: NfcViewModel) {
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            LazyColumn(modifier = Modifier.weight(1f, true)) {
+            LazyColumn(modifier = Modifier.weight(1f)) {
                 itemsIndexed(items) { index, item ->
                     ListItem(
                         leadingContent = {
