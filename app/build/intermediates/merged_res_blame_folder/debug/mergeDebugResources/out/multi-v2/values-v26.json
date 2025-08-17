@@ -4,7 +4,7 @@
             "outputFile": "com.inskin.app-mergeDebugResources-71:/values-v26/values-v26.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\douzi\\.gradle\\caches\\9.0-milestone-1\\transforms\\211bf774cc65019783f430b62d4e4498\\transformed\\appcompat-1.6.1\\res\\values-v26\\values-v26.xml",
+                    "source": "C:\\Users\\douzi\\.gradle\\caches\\9.0-milestone-1\\transforms\\19c10424c0e80ecb54d28ce376ac3288\\transformed\\appcompat-1.6.1\\res\\values-v26\\values-v26.xml",
                     "from": {
                         "startLines": "2,3,4,8,12,16",
                         "startColumns": "4,4,4,4,4,4",
