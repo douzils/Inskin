@@ -1,7 +1,9 @@
 package com.inskin.app
 
 /**
- * Holds details about a discovered NFC tag.
+ * Modèle unique utilisé par l’UI et la couche NFC.
+ * - `uid` et `serial` désignent le même identifiant (hex).
+ * - `techs` est la liste brute des technologies, et `tech` une version lisible.
  */
 data class TagInfo(
     val type: String?,
