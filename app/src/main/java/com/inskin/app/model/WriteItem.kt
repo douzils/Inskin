@@ -96,11 +96,15 @@ sealed class WriteItem {
         override val type: WriteItemType = WriteItemType.LOCATION
     }
 
-    /** Generic key/value pair serialised as custom data. */
+    /** Cryptocurrency address. */
     @Serializable
-    data class Data(val key: String, val value: String) : WriteItem() {
-        override val type: WriteItemType = WriteItemType.CUSTOM_DATA
+    data class Crypto(val address: String, val network: String? = null) : WriteItem() {
+        override val type: WriteItemType = WriteItemType.CRYPTO
     }
+
+    /** Generic key/value pair serialised as custom data or parameters. */
+    @Serializable
+    data class KeyValue(override val type: WriteItemType, val key: String, val value: String) : WriteItem()
 
     /** Generic URI based item for less common types. */
     @Serializable

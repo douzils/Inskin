@@ -77,7 +77,16 @@ class NfcViewModel(application: Application) : AndroidViewModel(application) {
                     NdefRecord.createMime("text/vcard", vcard.toByteArray())
                 }
                 is WriteItem.Location -> NdefRecord.createUri("geo:${item.lat},${item.lon}")
-                is WriteItem.Data -> {
+                is WriteItem.Crypto -> {
+                    val scheme = when (item.network?.lowercase()) {
+                        "eth", "ethereum" -> "ethereum"
+                        "btc", "bitcoin" -> "bitcoin"
+                        else -> null
+                    }
+                    val uri = if (scheme != null) "$scheme:${item.address}" else item.address
+                    NdefRecord.createUri(uri)
+                }
+                is WriteItem.KeyValue -> {
                     val json = Json.encodeToString(mapOf(item.key to item.value))
                     NdefRecord.createMime("application/x-inskin", json.toByteArray())
                 }

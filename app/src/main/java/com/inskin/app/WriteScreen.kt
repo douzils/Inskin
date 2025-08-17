@@ -6,13 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Button
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,6 +22,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSnackbarHostState
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,24 +69,48 @@ fun WriteScreen(vm: NfcViewModel) {
     var showTypeSheet by remember { mutableStateOf(false) }
     var formType by remember { mutableStateOf<WriteItemType?>(null) }
 
+    data class Action(val type: WriteItemType, val icon: ImageVector, val label: Int)
+    val actions = listOf(
+        Action(WriteItemType.TEXT, Icons.Filled.Article, R.string.action_text),
+        Action(WriteItemType.URL, Icons.Filled.Link, R.string.action_url),
+        Action(WriteItemType.WEB_SEARCH, Icons.Filled.Search, R.string.action_web_search),
+        Action(WriteItemType.SOCIAL, Icons.Filled.Share, R.string.action_social),
+        Action(WriteItemType.VIDEO, Icons.Filled.OndemandVideo, R.string.action_video),
+        Action(WriteItemType.FILE, Icons.Filled.InsertDriveFile, R.string.action_file),
+        Action(WriteItemType.APP, Icons.Filled.Apps, R.string.action_app),
+        Action(WriteItemType.MAIL, Icons.Filled.Email, R.string.action_mail),
+        Action(WriteItemType.CONTACT, Icons.Filled.Person, R.string.action_contact),
+        Action(WriteItemType.PHONE, Icons.Filled.Phone, R.string.action_phone),
+        Action(WriteItemType.SMS, Icons.Filled.Sms, R.string.action_sms),
+        Action(WriteItemType.LOCATION, Icons.Filled.Place, R.string.action_location),
+        Action(WriteItemType.CUSTOM_LOCATION, Icons.Filled.MyLocation, R.string.action_custom_location),
+        Action(WriteItemType.ADDRESS, Icons.Filled.Map, R.string.action_address),
+        Action(WriteItemType.DESTINATION, Icons.Filled.Navigation, R.string.action_destination),
+        Action(WriteItemType.NEARBY_SEARCH, Icons.Filled.TravelExplore, R.string.action_nearby_search),
+        Action(WriteItemType.STREET_VIEW, Icons.Filled.Streetview, R.string.action_street_view),
+        Action(WriteItemType.EMERGENCY, Icons.Filled.Warning, R.string.action_emergency),
+        Action(WriteItemType.CRYPTO, Icons.Filled.CurrencyBitcoin, R.string.action_crypto),
+        Action(WriteItemType.BLUETOOTH, Icons.Filled.Bluetooth, R.string.action_bluetooth),
+        Action(WriteItemType.WIFI, Icons.Filled.Wifi, R.string.action_wifi),
+        Action(WriteItemType.CUSTOM_DATA, Icons.Filled.Code, R.string.action_custom_data),
+        Action(WriteItemType.SETTINGS, Icons.Filled.Settings, R.string.action_settings),
+        Action(WriteItemType.CONDITION, Icons.Filled.Rule, R.string.action_condition)
+    )
+
     if (showTypeSheet) {
         ModalBottomSheet(onDismissRequest = { showTypeSheet = false }) {
-            ListItem(
-                leadingContent = { Icon(Icons.Filled.Article, contentDescription = null) },
-                headlineText = { Text(stringResource(R.string.action_text)) },
-                modifier = Modifier.clickable {
-                    showTypeSheet = false
-                    formType = WriteItemType.TEXT
+            LazyColumn {
+                items(actions) { action ->
+                    ListItem(
+                        leadingContent = { Icon(action.icon, contentDescription = null) },
+                        headlineText = { Text(stringResource(action.label)) },
+                        modifier = Modifier.clickable {
+                            showTypeSheet = false
+                            formType = action.type
+                        }
+                    )
                 }
-            )
-            ListItem(
-                leadingContent = { Icon(Icons.Filled.Link, contentDescription = null) },
-                headlineText = { Text(stringResource(R.string.action_url)) },
-                modifier = Modifier.clickable {
-                    showTypeSheet = false
-                    formType = WriteItemType.URL
-                }
-            )
+            }
         }
     }
 
@@ -105,6 +129,7 @@ fun WriteScreen(vm: NfcViewModel) {
                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.write_add_item))
             }
         },
+        floatingActionButtonPosition = FabPosition.End,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
@@ -112,17 +137,48 @@ fun WriteScreen(vm: NfcViewModel) {
                 itemsIndexed(items) { index, item ->
                     ListItem(
                         leadingContent = {
-                            when (item.type) {
-                                WriteItemType.TEXT -> Icon(Icons.Filled.Article, contentDescription = null)
-                                WriteItemType.URL -> Icon(Icons.Filled.Link, contentDescription = null)
-                                else -> Icon(Icons.Filled.Article, contentDescription = null)
+                            val icon = when (item.type) {
+                                WriteItemType.TEXT -> Icons.Filled.Article
+                                WriteItemType.URL -> Icons.Filled.Link
+                                WriteItemType.WEB_SEARCH -> Icons.Filled.Search
+                                WriteItemType.SOCIAL -> Icons.Filled.Share
+                                WriteItemType.VIDEO -> Icons.Filled.OndemandVideo
+                                WriteItemType.FILE -> Icons.Filled.InsertDriveFile
+                                WriteItemType.APP -> Icons.Filled.Apps
+                                WriteItemType.MAIL -> Icons.Filled.Email
+                                WriteItemType.CONTACT -> Icons.Filled.Person
+                                WriteItemType.PHONE -> Icons.Filled.Phone
+                                WriteItemType.SMS -> Icons.Filled.Sms
+                                WriteItemType.LOCATION -> Icons.Filled.Place
+                                WriteItemType.CUSTOM_LOCATION -> Icons.Filled.MyLocation
+                                WriteItemType.ADDRESS -> Icons.Filled.Map
+                                WriteItemType.DESTINATION -> Icons.Filled.Navigation
+                                WriteItemType.NEARBY_SEARCH -> Icons.Filled.TravelExplore
+                                WriteItemType.STREET_VIEW -> Icons.Filled.Streetview
+                                WriteItemType.EMERGENCY -> Icons.Filled.Warning
+                                WriteItemType.CRYPTO -> Icons.Filled.CurrencyBitcoin
+                                WriteItemType.BLUETOOTH -> Icons.Filled.Bluetooth
+                                WriteItemType.WIFI -> Icons.Filled.Wifi
+                                WriteItemType.CUSTOM_DATA -> Icons.Filled.Code
+                                WriteItemType.SETTINGS -> Icons.Filled.Settings
+                                WriteItemType.CONDITION -> Icons.Filled.Rule
                             }
+                            Icon(icon, contentDescription = null)
                         },
                         headlineText = {
                             when (item) {
                                 is WriteItem.Text -> Text(item.text)
                                 is WriteItem.Url -> Text(item.url)
-                                else -> Text(item.type.name)
+                                is WriteItem.Phone -> Text(item.number)
+                                is WriteItem.Sms -> Text("${item.number} ${item.body.orEmpty()}")
+                                is WriteItem.Mail -> Text(item.to)
+                                is WriteItem.Wifi -> Text(item.ssid)
+                                is WriteItem.Bluetooth -> Text(item.mac)
+                                is WriteItem.Contact -> Text(item.name)
+                                is WriteItem.Location -> Text("${item.lat},${item.lon}")
+                                is WriteItem.Crypto -> Text(item.address)
+                                is WriteItem.KeyValue -> Text("${item.key}=${item.value}")
+                                is WriteItem.UriItem -> Text(item.uri)
                             }
                         },
                         trailingContent = {
