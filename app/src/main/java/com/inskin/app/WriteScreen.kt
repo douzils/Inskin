@@ -197,7 +197,7 @@ fun WriteScreen(vm: NfcViewModel) {
                 onClick = {
                     val result = vm.writeItems(items)
                     scope.launch {
-                        val msg = result.fold({ stringResource(R.string.write_success) }, { it.message ?: "error" })
+                        val msg = result.fold({ context.getString(R.string.write_success) }, { it.message ?: "error" })
                         snackbarHostState.showSnackbar(msg)
                     }
                 },
