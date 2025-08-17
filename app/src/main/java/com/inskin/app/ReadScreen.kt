@@ -35,7 +35,7 @@ private val Context.tagMetaStore by preferencesDataStore("tag_meta")
 
 @Composable
 fun ReadScreen(tagInfoFlow: StateFlow<TagInfo?>) {
-    val tagInfo by tagInfoFlow.collectAsState()
+    val tagInfo = tagInfoFlow.collectAsState().value
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
@@ -97,13 +97,15 @@ fun ReadScreen(tagInfoFlow: StateFlow<TagInfo?>) {
                     Text(stringResource(R.string.copy_uid))
                 }
                 Spacer(Modifier.width(8.dp))
-                Button(onClick = {
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, tagInfo.uid)
+                Button(
+                    onClick = {
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, tagInfo?.uid ?: "")
+                        }
+                        context.startActivity(Intent.createChooser(send, null))
                     }
-                    context.startActivity(Intent.createChooser(send, null))
-                }) {
+                ) {
                     Text(stringResource(R.string.share))
                 }
                 context.startActivity(Intent.createChooser(send, null))
