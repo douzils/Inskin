@@ -10,7 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -114,10 +114,10 @@ private fun QueryItemForm(type: WriteItemType, onSubmit: (WriteItem) -> Unit) {
             onClick = {
                 if (query.isNotBlank()) {
                     val uri = when (type) {
-                        WriteItemType.WEB_SEARCH -> "https://www.google.com/search?q=${'${'}Uri.encode(query)}"
-                        WriteItemType.ADDRESS -> "https://maps.google.com/?q=${'${'}Uri.encode(query)}"
-                        WriteItemType.DESTINATION -> "google.navigation:q=${'${'}Uri.encode(query)}"
-                        WriteItemType.NEARBY_SEARCH -> "geo:0,0?q=${'${'}Uri.encode(query)}"
+                        WriteItemType.WEB_SEARCH -> "https://www.google.com/search?q=${Uri.encode(query)}"
+                        WriteItemType.ADDRESS -> "https://maps.google.com/?q=${Uri.encode(query)}"
+                        WriteItemType.DESTINATION -> "google.navigation:q=${Uri.encode(query)}"
+                        WriteItemType.NEARBY_SEARCH -> "geo:0,0?q=${Uri.encode(query)}"
                         else -> query
                     }
                     onSubmit(WriteItem.UriItem(type, uri))
@@ -283,7 +283,7 @@ private fun CustomLocationItemForm(onSubmit: (WriteItem) -> Unit) {
         Button(onClick = {
             val la = lat.toDoubleOrNull(); val lo = lon.toDoubleOrNull()
             if (la != null && lo != null && label.isNotBlank()) {
-                val uri = "geo:${'$'}la,${'$'}lo?q=${'$'}la,${'$'}lo(${Uri.encode(label)})"
+                val uri = "geo:$la,$lo?q=$la,$lo(${Uri.encode(label)})"
                 onSubmit(WriteItem.UriItem(WriteItemType.CUSTOM_LOCATION, uri))
             }
         }, enabled = enabled, modifier = Modifier.padding(top = 16.dp)) { Text(stringResource(R.string.action_add)) }
@@ -301,7 +301,7 @@ private fun StreetViewItemForm(onSubmit: (WriteItem) -> Unit) {
         Button(onClick = {
             val la = lat.toDoubleOrNull(); val lo = lon.toDoubleOrNull()
             if (la != null && lo != null) {
-                val uri = "https://maps.google.com/?cbll=${'$'}la,${'$'}lo"
+                val uri = "https://maps.google.com/?cbll=$la,$lo"
                 onSubmit(WriteItem.UriItem(WriteItemType.STREET_VIEW, uri))
             }
         }, enabled = enabled, modifier = Modifier.padding(top = 16.dp)) { Text(stringResource(R.string.action_add)) }
