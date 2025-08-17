@@ -22,6 +22,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateFloat
+
 
 /** Data about a scanned NFC tag. */
 data class TagInfo(
