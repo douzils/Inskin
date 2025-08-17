@@ -5,4 +5,15 @@ android-app/.gradle/
 android-app/build/
 .gradle/
 
+# Ignore top-level build outputs
+build/
+
 *.apk
+
+/build/
+
+
+/.idea/
+/build/
+/app/build/
+
