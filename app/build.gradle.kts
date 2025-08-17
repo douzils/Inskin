@@ -45,6 +45,9 @@ dependencies {
   implementation("androidx.navigation:navigation-compose:2.8.0")
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.5")
   implementation("androidx.compose.material:material-icons-extended")
+  implementation("androidx.compose.ui:ui-tooling-preview")
+  debugImplementation("androidx.compose.ui:ui-tooling")
+
 
   // Tooling / Preview (pour @Preview)
   implementation("androidx.compose.ui:ui-tooling-preview")

@@ -41,7 +41,6 @@
     <string name="tag_note_hint">Note</string>
     <string name="tag_icon_hint">Icon</string>
     <string name="save_note">Save</string>
-
     <string name="write_query_hint">Query</string>
     <string name="write_phone_hint">Phone number</string>
     <string name="write_sms_number_hint">Phone number</string>
