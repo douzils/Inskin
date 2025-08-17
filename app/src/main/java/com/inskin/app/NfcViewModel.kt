@@ -20,9 +20,15 @@ class NfcViewModel(application: Application) : AndroidViewModel(application) {
     private val _tagInfo = MutableStateFlow<TagInfo?>(null)
     val tagInfo = _tagInfo.asStateFlow()
 
-    fun updateFromTag(tag: Tag) {
-        lastTag = tag
+    fun updateFromTag(tag: Tag?) {
+        if (tag == null) {
+            _tagInfo.value = null
+            return
+        }
 
+        lastTag = tag
+        val uid = tag.id?.joinToString(separator = "") { b -> "%02X".format(b) }
+        val techs = tag.techList?.toList().orEmpty()
         val ndef = Ndef.get(tag)
         val uid = tag.id?.joinToString("") { "%02X".format(it) } ?: ""
         val type = ndef?.type ?: "Unknown"
@@ -31,8 +37,6 @@ class NfcViewModel(application: Application) : AndroidViewModel(application) {
         val used = ndef?.cachedNdefMessage?.toByteArray()?.size ?: 0
         val writable = ndef?.isWritable == true
         val readonly = ndef?.isWritable == false
-        val uid = tag.id?.joinToString(separator = "") { b -> "%02X".format(b) }
-        val techs = tag.techList.toList()
         val records = ndef?.cachedNdefMessage?.records?.map { record ->
             when {
                 record.tnf == NdefRecord.TNF_WELL_KNOWN && record.type.contentEquals(NdefRecord.RTD_TEXT) -> {
