@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.inskin.app-mergeDebugResources-67:/values-en-rGB/values-en-rGB.xml",
+            "outputFile": "com.inskin.app-mergeDebugResources-71:/values-en-rGB/values-en-rGB.xml",
             "map": [
                 {
                     "source": "C:\\Users\\douzi\\.gradle\\caches\\transforms-4\\b090992141cd5a0aae1a5a7ac6f531c2\\transformed\\material3-release\\res\\values-en-rGB\\values-en-rGB.xml",

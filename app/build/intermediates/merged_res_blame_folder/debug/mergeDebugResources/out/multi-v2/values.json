@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.inskin.app-mergeDebugResources-67:/values/values.xml",
+            "outputFile": "com.inskin.app-mergeDebugResources-71:/values/values.xml",
             "map": [
                 {
                     "source": "C:\\Users\\douzi\\.gradle\\caches\\transforms-4\\24b056a9c6dee9667b8995bc52689bce\\transformed\\cardview-1.0.0\\res\\values\\values.xml",

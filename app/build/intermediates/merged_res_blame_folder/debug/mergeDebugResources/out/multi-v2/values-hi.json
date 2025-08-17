@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.inskin.app-mergeDebugResources-67:/values-hi/values-hi.xml",
+            "outputFile": "com.inskin.app-mergeDebugResources-71:/values-hi/values-hi.xml",
             "map": [
                 {
                     "source": "C:\\Users\\douzi\\.gradle\\caches\\transforms-4\\b090992141cd5a0aae1a5a7ac6f531c2\\transformed\\material3-release\\res\\values-hi\\values-hi.xml",

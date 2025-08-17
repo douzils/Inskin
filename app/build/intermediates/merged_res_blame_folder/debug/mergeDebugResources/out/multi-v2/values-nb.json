@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.inskin.app-mergeDebugResources-67:/values-nb/values-nb.xml",
+            "outputFile": "com.inskin.app-mergeDebugResources-71:/values-nb/values-nb.xml",
             "map": [
                 {
                     "source": "C:\\Users\\douzi\\.gradle\\caches\\transforms-4\\0da526bb2eece138cc8739f41e96dd8d\\transformed\\ui-release\\res\\values-nb\\values-nb.xml",

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.inskin.app-mergeDebugResources-67:/values-v16/values-v16.xml",
+            "outputFile": "com.inskin.app-mergeDebugResources-71:/values-v16/values-v16.xml",
             "map": [
                 {
                     "source": "C:\\Users\\douzi\\.gradle\\caches\\transforms-4\\60be373d538bd6d346da9bd52b87306b\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
