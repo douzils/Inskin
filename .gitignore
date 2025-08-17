@@ -12,3 +12,8 @@ build/
 
 /build/
 
+
+/.idea/
+/build/
+/app/build/
+
