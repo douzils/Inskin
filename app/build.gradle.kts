@@ -23,16 +23,10 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
-
-  kotlinOptions {
-    jvmTarget = "17"
-  }
-
-  signingConfigs {
-    // configured via environment variables
-  }
+  kotlinOptions { jvmTarget = "17" }
 
   buildTypes {
+    debug { isMinifyEnabled = false }
     release {
       isMinifyEnabled = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -50,6 +44,9 @@ dependencies {
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.5")
   implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
+  // Material Components for XML theme
+  implementation("com.google.android.material:material:1.12.0")
+
   // Room + KSP
   implementation("androidx.room:room-ktx:2.6.1")
   ksp("androidx.room:room-compiler:2.6.1")
@@ -57,7 +54,7 @@ dependencies {
   // DataStore
   implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-  // Serialization for export JSON
+  // Serialization
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
 
   testImplementation("junit:junit:4.13.2")

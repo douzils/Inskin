@@ -5,4 +5,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Inskin"
 include(":app")
-project(":app").projectDir = file("android-app/app")
