@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.inskin.app
 
 import android.content.Context
@@ -17,13 +19,13 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSnackbarHostState
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,10 +45,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
 private val Context.writeDataStore by preferencesDataStore("write_items")
 private val WRITE_ITEMS_KEY = stringPreferencesKey("write_items_json")
-
 /**
  * Main screen for creating a list of [WriteItem] and writing them to a tag.
  */
@@ -55,7 +55,7 @@ fun WriteScreen(vm: NfcViewModel) {
     val context = LocalContext.current
     val dataStore = context.writeDataStore
     val scope = rememberCoroutineScope()
-    val snackbarHostState: SnackbarHostState = rememberSnackbarHostState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var items by remember { mutableStateOf<List<WriteItem>>(emptyList()) }
     val json = Json
 
@@ -105,7 +105,7 @@ fun WriteScreen(vm: NfcViewModel) {
                 items(actions) { action ->
                     ListItem(
                         leadingContent = { Icon(action.icon, contentDescription = null) },
-                        headlineText = { Text(stringResource(action.label)) },
+                        headlineContent = { Text(stringResource(action.label)) },
                         modifier = Modifier.clickable {
                             showTypeSheet = false
                             formType = action.type
@@ -167,7 +167,7 @@ fun WriteScreen(vm: NfcViewModel) {
                             }
                             Icon(icon, contentDescription = null)
                         },
-                        headlineText = {
+                        headlineContent = {
                             when (item) {
                                 is WriteItem.Text -> Text(item.text)
                                 is WriteItem.Url -> Text(item.url)
