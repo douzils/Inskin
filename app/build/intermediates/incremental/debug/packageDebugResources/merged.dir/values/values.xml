@@ -63,5 +63,8 @@
     <string name="write_wifi_password_hint">Password</string>
     <string name="write_wifi_security_hint">Security</string>
     <string name="write_wifi_ssid_hint">SSID</string>
-    <style name="Theme.Inskin" parent="Theme.MaterialComponents.DayNight.NoActionBar"/>
+    <style name="Theme.Inskin" parent="Theme.Material3.Light.NoActionBar">
+    <item name="android:statusBarColor">@android:color/transparent</item>
+    <item name="android:navigationBarColor">@android:color/white</item>
+  </style>
 </resources>

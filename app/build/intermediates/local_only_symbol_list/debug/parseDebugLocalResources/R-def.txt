@@ -1,8 +1,10 @@
 R_DEF: Internal format may change without notice
 local
+drawable antenna_tag
 drawable ic_implant_nextv2
 drawable ic_launcher_background
 drawable ic_launcher_foreground
+drawable tag_default
 mipmap ic_launcher
 mipmap ic_launcher_round
 string action_add

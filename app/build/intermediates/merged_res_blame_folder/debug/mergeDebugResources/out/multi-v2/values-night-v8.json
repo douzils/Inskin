@@ -4,7 +4,7 @@
             "outputFile": "com.inskin.app-mergeDebugResources-71:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\douzi\\.gradle\\caches\\9.0-milestone-1\\transforms\\b9b1515c2cee7a0fb1c8c9853df3e001\\transformed\\material-1.12.0\\res\\values-night-v8\\values-night-v8.xml",
+                    "source": "C:\\Users\\douzi\\.gradle\\caches\\8.13\\transforms\\f3ae6e773f2beb4a1c24267b8851713e\\transformed\\material-1.12.0\\res\\values-night-v8\\values-night-v8.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\douzi\\.gradle\\caches\\9.0-milestone-1\\transforms\\19c10424c0e80ecb54d28ce376ac3288\\transformed\\appcompat-1.6.1\\res\\values-night-v8\\values-night-v8.xml",
+                    "source": "C:\\Users\\douzi\\.gradle\\caches\\8.13\\transforms\\bd6d2b1f09be3c2812dc3f4c6538bf3c\\transformed\\appcompat-1.6.1\\res\\values-night-v8\\values-night-v8.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
