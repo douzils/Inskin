@@ -1,5 +1,6 @@
 R_DEF: Internal format may change without notice
 local
+drawable ic_implant_nextv2
 drawable ic_launcher_background
 drawable ic_launcher_foreground
 mipmap ic_launcher
@@ -33,11 +34,14 @@ string app_name
 string btn_write
 string copy_uid
 string not_implemented
+string save_note
 string send_feedback
 string share
 string tab_read
 string tab_settings
 string tab_write
+string tag_icon_hint
+string tag_note_hint
 string waiting_scan
 string write_add_item
 string write_bluetooth_mac_hint
@@ -65,3 +69,4 @@ string write_wifi_password_hint
 string write_wifi_security_hint
 string write_wifi_ssid_hint
 style Theme.Inskin
+xml nfc_tech_filter

@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,10 +15,16 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun ReadScreen(vm: NfcViewModel) {
-    val tagInfo by vm.tagInfo.collectAsState()
+    ReadScreen(tagInfoFlow = vm.tagInfo)
+}
+
+@Composable
+fun ReadScreen(tagInfoFlow: StateFlow<TagInfo?>) {
+    val tagInfo = tagInfoFlow.collectAsState().value
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
 
@@ -28,7 +33,7 @@ fun ReadScreen(vm: NfcViewModel) {
             Waiting()
         } else {
             TagDetails(
-                tag = tagInfo!!,
+                tag = tagInfo,
                 onCopy = { clipboard.setText(AnnotatedString(it)) },
                 onShare = { text ->
                     val send = Intent(Intent.ACTION_SEND).apply {

@@ -2944,6 +2944,7 @@ drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_clear_black_24
 drawable ic_clock_black_24dp
+drawable ic_implant_nextv2
 drawable ic_keyboard_black_24dp
 drawable ic_launcher_background
 drawable ic_launcher_foreground
@@ -3947,6 +3948,7 @@ string path_password_eye_mask_visible
 string path_password_strike_through
 string range_end
 string range_start
+string save_note
 string search_menu_title
 string searchbar_scrolling_view_behavior
 string searchview_clear_text_content_description
@@ -3965,6 +3967,8 @@ string tab
 string tab_read
 string tab_settings
 string tab_write
+string tag_icon_hint
+string tag_note_hint
 string template_percent
 string tooltip_description
 string tooltip_label
@@ -5280,3 +5284,4 @@ styleable View android_theme android_focusable paddingEnd paddingStart theme
 styleable ViewBackgroundHelper android_background backgroundTint backgroundTintMode
 styleable ViewPager2 android_orientation
 styleable ViewStubCompat android_id android_layout android_inflatedId
+xml nfc_tech_filter
