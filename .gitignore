@@ -1,19 +1,5 @@
-__pycache__/
-*.pyc
-gradle/wrapper/gradle-wrapper.jar
-android-app/.gradle/
-android-app/build/
+# Android/Gradle
 .gradle/
-
-# Ignore top-level build outputs
-build/
-
-*.apk
-
-/build/
-
-
-/.idea/
-/build/
-/app/build/
-
+local.properties
+**/build/
+app/build/
