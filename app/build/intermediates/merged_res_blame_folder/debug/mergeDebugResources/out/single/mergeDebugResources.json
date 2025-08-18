@@ -4,8 +4,16 @@
         "source": "com.inskin.app-main-75:/drawable/ic_implant_nextv2.xml"
     },
     {
+        "merged": "com.inskin.app-debug-73:/drawable_tag_default.png.flat",
+        "source": "com.inskin.app-main-75:/drawable/tag_default.png"
+    },
+    {
         "merged": "com.inskin.app-debug-73:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
         "source": "com.inskin.app-main-75:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.inskin.app-debug-73:/drawable_antenna_tag.png.flat",
+        "source": "com.inskin.app-main-75:/drawable/antenna_tag.png"
     },
     {
         "merged": "com.inskin.app-debug-73:/mipmap-anydpi-v26_ic_launcher.xml.flat",

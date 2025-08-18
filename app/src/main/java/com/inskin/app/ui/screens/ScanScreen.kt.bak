@@ -1,0 +1,470 @@
+﻿package com.inskin.app.ui.screens
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.inskin.app.NfcViewModel
+import com.inskin.app.R
+import com.inskin.app.TagInfo
+import com.inskin.app.UiState
+import com.inskin.app.ui.components.BigCircle
+import com.inskin.app.ui.theme.DarkCircle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+private enum class Phase { Idle, Loading, Info }
+
+@Composable
+fun ScanScreen(vm: NfcViewModel) {
+    val state by vm.state.collectAsState()
+    val phase = when (state) {
+        is UiState.Scanning -> Phase.Idle
+        is UiState.Loading  -> Phase.Loading
+        is UiState.Loaded   -> Phase.Info
+        else                -> Phase.Idle
+    }
+    var quick by remember { mutableStateOf(false) }
+
+    val logoAlpha by animateFloatAsState(if (phase != Phase.Info) 1f else 0f, tween(280), label="logoAlpha")
+    val detailsAlpha by animateFloatAsState(if (phase == Phase.Info) 1f else 0f, tween(280), label="detailsAlpha")
+
+    // Progression animée des bulles (0 -> 1) pilotée par quick
+    val scope = rememberCoroutineScope()
+    val quickProgress = remember { Animatable(0f) }
+    LaunchedEffect(quick) {
+        if (quick) quickProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
+        ) else quickProgress.animateTo(
+            targetValue = 0f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)
+        )
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        IconButton(onClick = { /* menu */ }, modifier = Modifier.align(Alignment.TopStart).padding(16.dp)) {
+            Icon(Icons.Filled.Menu, contentDescription = "Menu")
+        }
+        IconButton(onClick = { /* settings */ }, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
+            Icon(Icons.Filled.Settings, contentDescription = "Options")
+        }
+
+        Column(
+            Modifier.fillMaxSize().padding(bottom = 56.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (phase != Phase.Info) {
+                val circle = 360.dp
+                Box(Modifier.size(circle), contentAlignment = Alignment.Center) {
+                    // Bulles derrière (visibles au début)
+                    BubblesLayer(progress = quickProgress.value, circleSize = circle,
+                        alpha = 1f - smoothstep(0.45f, 0.6f, quickProgress.value),
+                        onLeft = { quick = false }, onRight = { quick = false })
+
+                    // Cercle principal — FIXE
+                    BigCircle(
+                        size = circle,
+                        modifier = Modifier.pointerInput(quick) {
+                            detectTapGestures(
+                                onLongPress = { if (!quick) quick = true },
+                                onTap = { if (quick) quick = false }
+                            )
+                        }
+                    ) {
+                        PulseRings()
+                        Image(
+                            painter = painterResource(R.drawable.antenna_tag),
+                            contentDescription = "Antenne NFC",
+                            modifier = Modifier.size(circle - 4.dp).graphicsLayer { alpha = logoAlpha },
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
+                    // Bulles devant (visibles en fin)
+                    BubblesLayer(progress = quickProgress.value, circleSize = circle,
+                        alpha = smoothstep(0.4f, 0.55f, quickProgress.value),
+                        onLeft = { quick = false }, onRight = { quick = false })
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            AnimatedVisibility(visible = phase != Phase.Info, enter = fadeIn(), exit = fadeOut()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("SCANNEZ LE TAG", style = MaterialTheme.typography.headlineLarge, color = DarkCircle, fontWeight = FontWeight.ExtraBold)
+                    Spacer(Modifier.height(6.dp))
+                    DotsBlinking(color = DarkCircle, size = 10.dp, alpha = 1f)
+                }
+            }
+
+            if (state is UiState.Loaded) {
+                Spacer(Modifier.height(16.dp))
+                Box(Modifier.graphicsLayer(alpha = detailsAlpha)) {
+                    TagDetailsCard((state as UiState.Loaded).info)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BubblesLayer(
+    progress: Float,
+    circleSize: Dp,
+    alpha: Float,
+    onLeft: () -> Unit,
+    onRight: () -> Unit
+) {
+    val dx: Dp = circleSize * 0.28f
+    val dy: Dp = -(circleSize * 0.62f)
+
+    Bubble(
+        icon = { Icon(Icons.Filled.Lock, null, tint = Color(0xFFE6E6E6), modifier = Modifier.size(48.dp)) },
+        modifier = Modifier
+            .offset(x = -dx * progress, y = dy * progress)
+            .graphicsLayer {
+                val s = 0.6f + 0.4f * progress
+                scaleX = s; scaleY = s
+                this.alpha = alpha.coerceIn(0f, 1f)
+            },
+        onClick = onLeft
+    )
+    Bubble(
+        icon = { Icon(Icons.Filled.Share, null, tint = Color(0xFFE6E6E6), modifier = Modifier.size(48.dp)) },
+        modifier = Modifier
+            .offset(x =  dx * progress, y = dy * progress)
+            .graphicsLayer {
+                val s = 0.6f + 0.4f * progress
+                scaleX = s; scaleY = s
+                this.alpha = alpha.coerceIn(0f, 1f)
+            },
+        onClick = onRight
+    )
+}
+
+@Composable
+private fun Bubble(icon: @Composable () -> Unit, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .size(96.dp)
+            .clip(CircleShape)
+            .background(DarkCircle)
+            .pointerInput(Unit) { detectTapGestures(onTap = { onClick() }) },
+        contentAlignment = Alignment.Center
+    ) { icon() }
+}
+
+@Composable
+private fun DotsBlinking(color: Color, size: Dp, alpha: Float) {
+    val a1 = remember { Animatable(0.25f) }
+    val a2 = remember { Animatable(0.25f) }
+    val a3 = remember { Animatable(0.25f) }
+
+    LaunchedEffect(alpha) {
+        if (alpha <= 0f) { a1.snapTo(0f); a2.snapTo(0f); a3.snapTo(0f); return@LaunchedEffect }
+        while (true) { a1.animateTo(1f, tween(900, easing = LinearEasing)); delay(450); a1.animateTo(0.25f, tween(900, easing = LinearEasing)); delay(900) }
+    }
+    LaunchedEffect(alpha, key2 = "d2") {
+        if (alpha <= 0f) return@LaunchedEffect
+        delay(600); while (true) { a2.animateTo(1f, tween(900, easing = LinearEasing)); delay(450); a2.animateTo(0.25f, tween(900, easing = LinearEasing)); delay(900) }
+    }
+    LaunchedEffect(alpha, key2 = "d3") {
+        if (alpha <= 0f) return@LaunchedEffect
+        delay(1200); while (true) { a3.animateTo(1f, tween(900, easing = LinearEasing)); delay(450); a3.animateTo(0.25f, tween(900, easing = LinearEasing)); delay(900) }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(size), verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.graphicsLayer(alpha = alpha)) {
+        Dot(alpha = a1.value, size = size, color = color)
+        Dot(alpha = a2.value, size = size, color = color)
+        Dot(alpha = a3.value, size = size, color = color)
+    }
+}
+
+@Composable private fun Dot(alpha: Float, size: Dp, color: Color) {
+    Box(Modifier.size(size).graphicsLayer { this.alpha = alpha }.background(color, CircleShape))
+}
+
+@Composable
+private fun PulseRings() {
+    val t = rememberInfiniteTransition(label = "pulse")
+    val p1 = t.animateFloat(0f, 1f, infiniteRepeatable(tween(900, easing = LinearEasing)), label = "p1").value
+    val p2 = t.animateFloat(0.5f, 1.5f, infiniteRepeatable(tween(900, easing = LinearEasing)), label = "p2").value
+    Canvas(Modifier.size(356.dp)) {
+        fun ring(progress: Float) {
+            val c = progress.coerceIn(0f, 1f)
+            val r = size.minDimension * 0.49f * c
+            val a = (1f - c) * 0.45f
+            if (r > 0f) drawCircle(Color.White.copy(alpha = a), radius = r, style = Stroke(width = 12f))
+        }
+        ring(p1); ring(p2 - 0.5f)
+    }
+}
+
+@Composable
+private fun TagDetailsLegacy0(info: TagInfo) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(8.dp))
+        Text(info.title, style = MaterialTheme.typography.displayLarge, color = DarkCircle)
+        Spacer(Modifier.height(4.dp))
+        Text(info.uid, style = MaterialTheme.typography.titleLarge, color = DarkCircle)
+        Spacer(Modifier.height(14.dp))
+        Button(
+            onClick = { /* TODO */ },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE89A48)),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.height(48.dp)
+        ) { Text("Modifier", fontWeight = FontWeight.Bold) }
+        Spacer(Modifier.height(16.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            com.inskin.app.ui.components.BigCircle(size = 300.dp) {
+                Image(
+                    painter = painterResource(R.drawable.tag_default),
+                    contentDescription = "Tag",
+                    modifier = Modifier.size(220.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(info.title, style = MaterialTheme.typography.displayMedium, color = DarkCircle, fontWeight = FontWeight.ExtraBold)
+        Spacer(Modifier.height(8.dp))
+        Text("${info.used} / ${info.total} bytes", style = MaterialTheme.typography.titleLarge, color = DarkCircle)
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.fillMaxWidth().height(18.dp).background(Color(0xFF5A5A5A), RoundedCornerShape(12.dp))) {
+            Box(
+                Modifier
+                    .fillMaxWidth(info.used.toFloat()/info.total.toFloat())
+                    .fillMaxHeight()
+                    .background(Color(0xFF36D27F), RoundedCornerShape(12.dp))
+            )
+        }
+    }
+}
+
+/** interpolation douce 0..1 sur [e0,e1] */
+private fun smoothstep(e0: Float, e1: Float, x: Float): Float {
+    val t = ((x - e0) / (e1 - e0)).coerceIn(0f, 1f)
+    return t * t * (3 - 2 * t)
+}
+
+
+
+
+
+private val HOME_CIRCLE = 360.dp          // diamètre accueil
+private val TAG_CIRCLE  = 280.dp          // diamètre page tag
+private val SLOT_EXTRA  = 52.dp
+private val SLOT_HEIGHT = HOME_CIRCLE + SLOT_EXTRA  // hauteur de slot commune
+
+@Composable
+fun TagDetailsCard(info: TagInfo) {
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Slot vertical identique à l’accueil. Le cercle du tag est plus petit.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(SLOT_HEIGHT),
+            contentAlignment = Alignment.Center
+        ) {
+            BigCircle(size = TAG_CIRCLE) {
+                Image(
+                    painter = painterResource(R.drawable.tag_default),
+                    contentDescription = "Tag",
+                    modifier = Modifier.size(TAG_CIRCLE - 40.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Text(info.title, style = MaterialTheme.typography.displayLarge, color = DarkCircle)
+        Spacer(Modifier.height(4.dp))
+        Text(info.uid, style = MaterialTheme.typography.titleLarge, color = DarkCircle)
+
+        Spacer(Modifier.height(12.dp))
+        Button(
+            onClick = { /* TODO */ },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE89A48)),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.height(44.dp)
+        ) { Text("Modifier", fontWeight = FontWeight.Bold) }
+
+        Spacer(Modifier.height(12.dp))
+        Text("${info.used} / ${info.total} bytes", style = MaterialTheme.typography.titleLarge, color = DarkCircle)
+
+        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(18.dp)
+                .padding(horizontal = 20.dp)
+                .background(Color(0xFF5A5A5A), RoundedCornerShape(12.dp))
+        ) {
+            val ratio = (info.used.toFloat() / info.total.toFloat()).coerceIn(0f, 1f)
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(ratio)
+                    .background(Color(0xFF36D27F), RoundedCornerShape(12.dp))
+            )
+        }
+    }
+}
+/* ===== TAG PAGE (maquette) ===== */
+@Composable
+fun TagDetailsCard(info: TagInfo) {
+    import androidx.compose.foundation.layout.*
+    import androidx.compose.foundation.Image
+    import androidx.compose.material.icons.Icons
+    import androidx.compose.material.icons.filled.Lock
+    import androidx.compose.material3.*
+    import androidx.compose.runtime.Composable
+    import androidx.compose.ui.Alignment
+    import androidx.compose.ui.Modifier
+    import androidx.compose.ui.draw.clip
+    import androidx.compose.ui.graphics.Color
+    import androidx.compose.ui.res.painterResource
+    import androidx.compose.ui.text.font.FontWeight
+    import androidx.compose.ui.unit.dp
+    import androidx.compose.ui.unit.sp
+    import com.inskin.app.R
+    import com.inskin.app.ui.components.BigCircle
+    import com.inskin.app.ui.theme.DarkCircle
+    import com.inskin.app.ui.theme.UiDims
+
+    val used = info.usedBytes
+    val total = info.totalBytes
+    val progress = if (total > 0) used.toFloat() / total.toFloat() else 0f
+
+    Box(Modifier.fillMaxSize()) {
+        /* Titre + UID + bouton */
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = info.typeName,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = DarkCircle
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = info.uid,
+                style = MaterialTheme.typography.titleMedium,
+                color = DarkCircle
+            )
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick = { /* TODO: action modifier */ },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE89A48)),
+                shape = MaterialTheme.shapes.medium
+            ) { Text("Modifier", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        }
+
+        /* Grand cercle — même centre vertical que l’accueil, taille réduite */
+        val topOffset = UiDims.HomeCenterY - (UiDims.TagCircleSize / 2)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = topOffset),
+            contentAlignment = Alignment.Center
+        ) {
+            BigCircle(size = UiDims.TagCircleSize) {
+                // logo par défaut à l’intérieur (antenne)
+                Image(
+                    painter = painterResource(R.drawable.antenna_tag),
+                    contentDescription = "Tag",
+                    modifier = Modifier.size(UiDims.TagCircleSize * 0.68f)
+                )
+            }
+            if (info.locked) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = "Lock",
+                    tint = DarkCircle,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-16).dp, y = (-16).dp)
+                        .size(28.dp)
+                )
+            }
+        }
+
+        /* Nom + barre de progression + “Plus d’informations” */
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = info.name,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = DarkCircle
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "${used} / ${total} bytes",
+                style = MaterialTheme.typography.titleMedium,
+                color = DarkCircle
+            )
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = progress,
+                trackColor = Color(0xFF5A5A5A),
+                color = Color(0xFF36D27F),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(MaterialTheme.shapes.small)
+            )
+            Spacer(Modifier.height(18.dp))
+            Text("Plus d'informations", style = MaterialTheme.typography.titleLarge, color = DarkCircle)
+            Icon(
+                painterResource(android.R.drawable.arrow_down_float),
+                contentDescription = null,
+                tint = DarkCircle,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+
