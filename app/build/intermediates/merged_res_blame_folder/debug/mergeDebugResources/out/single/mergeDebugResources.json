@@ -1,11 +1,19 @@
 [
     {
+        "merged": "com.inskin.app-debug-73:/drawable_ic_implant_nextv2.xml.flat",
+        "source": "com.inskin.app-main-75:/drawable/ic_implant_nextv2.xml"
+    },
+    {
         "merged": "com.inskin.app-debug-73:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
         "source": "com.inskin.app-main-75:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
         "merged": "com.inskin.app-debug-73:/mipmap-anydpi-v26_ic_launcher.xml.flat",
         "source": "com.inskin.app-main-75:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.inskin.app-debug-73:/xml_nfc_tech_filter.xml.flat",
+        "source": "com.inskin.app-main-75:/xml/nfc_tech_filter.xml"
     },
     {
         "merged": "com.inskin.app-debug-73:/drawable_ic_launcher_background.xml.flat",

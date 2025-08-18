@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-30:14
-INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-30:14
-INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-30:14
-INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-30:14
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-46:12
+INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-46:12
+INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-46:12
+INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:1:1-46:12
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\b9b1515c2cee7a0fb1c8c9853df3e001\transformed\material-1.12.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\6113f0644801abf99829a832b66cd1a0\transformed\constraintlayout-2.0.1\AndroidManifest.xml:2:1-11:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\659003818653ddfbdd9bf46b9024e82d\transformed\appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
@@ -108,8 +108,8 @@ ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:3:3-59
 	android:name
 		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:3:20-57
 application
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:5:3-29:19
-INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:5:3-29:19
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:5:3-45:17
+INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml:5:3-45:17
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\b9b1515c2cee7a0fb1c8c9853df3e001\transformed\material-1.12.0\AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\b9b1515c2cee7a0fb1c8c9853df3e001\transformed\material-1.12.0\AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\douzi\.gradle\caches\9.0-milestone-1\transforms\6113f0644801abf99829a832b66cd1a0\transformed\constraintlayout-2.0.1\AndroidManifest.xml:9:5-20
@@ -137,45 +137,65 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\douzi\.gradle\cach
 	android:label
 		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:6:7-39
 	android:roundIcon
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:8:7-52
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:9:7-52
 	android:icon
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:7:7-41
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:8:7-41
 	android:theme
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:9:7-42
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:10:7-42
+	android:enableOnBackInvokedCallback
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:7:7-49
 activity#com.inskin.app.MainActivity
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:10:5-28:18
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:12:5-44:16
 	android:exported
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:10:44-67
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:12:44-67
 	android:name
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:10:15-43
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:12:15-43
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:11:7-14:23
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:13:7-16:23
 action#android.intent.action.MAIN
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:12:9-60
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:14:9-60
 	android:name
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:12:17-58
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:14:17-58
 category#android.intent.category.LAUNCHER
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:13:9-68
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:15:9-68
 	android:name
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:13:19-66
-intent-filter#action:name:android.nfc.action.NDEF_DISCOVERED+category:name:android.intent.category.DEFAULT+data:mimeType:text/plain
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:17:9-21:25
-action#android.nfc.action.NDEF_DISCOVERED
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:18:11-70
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:15:19-66
+intent-filter#action:name:android.nfc.action.TAG_DISCOVERED+category:name:android.intent.category.DEFAULT
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:19:7-22:23
+action#android.nfc.action.TAG_DISCOVERED
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:20:9-67
 	android:name
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:18:19-68
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:20:17-65
 category#android.intent.category.DEFAULT
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:19:11-69
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:21:9-67
 	android:name
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:19:21-67
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:21:19-65
+intent-filter#action:name:android.nfc.action.TECH_DISCOVERED
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:25:7-27:23
+action#android.nfc.action.TECH_DISCOVERED
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:26:9-68
+	android:name
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:26:17-66
+meta-data#android.nfc.action.TECH_DISCOVERED
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:28:7-30:50
+	android:resource
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:30:9-48
+	android:name
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:29:9-58
+intent-filter#action:name:android.nfc.action.NDEF_DISCOVERED+category:name:android.intent.category.DEFAULT+data:mimeType:text/plain
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:33:7-37:23
+action#android.nfc.action.NDEF_DISCOVERED
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:34:9-68
+	android:name
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:34:17-66
 data
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:20:11-48
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:36:9-46
 	android:scheme
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:25:17-38
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:41:15-36
 	android:mimeType
-		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:20:17-46
+		ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:36:15-44
 intent-filter#action:name:android.nfc.action.NDEF_DISCOVERED+category:name:android.intent.category.DEFAULT+data:scheme:http+data:scheme:https
-ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:22:9-27:25
+ADDED from H:\Inskin\app\src\main\AndroidManifest.xml:38:7-43:23
 uses-sdk
 INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from H:\Inskin\app\src\main\AndroidManifest.xml
