@@ -1,13 +1,44 @@
-ï»¿<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-feature android:name="android.hardware.nfc" android:required="false"/>
-    <application android:theme="@style/Theme.Inskin" android:label="Inskin" android:allowBackup="true" android:supportsRtl="true">
-        <activity android:name=".MainActivity" android:theme="@style/Theme.Inskin" android:exported="true">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.NFC"/>
+
+    <!-- Le device doit avoir du NFC -->
+    <uses-feature android:name="android.hardware.nfc" android:required="true"/>
+
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Inskin">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Détection générique -->
+            <intent-filter>
+                <action android:name="android.nfc.action.TAG_DISCOVERED"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+
+            <!-- NDEF -->
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
+
+            <!-- Tech discovery via fichier xml -->
+            <meta-data
+                android:name="android.nfc.action.TECH_DISCOVERED"
+                android:resource="@xml/nfc_tech_filter"/>
         </activity>
     </application>
 </manifest>
-
-

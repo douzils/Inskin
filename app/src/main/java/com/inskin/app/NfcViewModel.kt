@@ -1,44 +1,30 @@
-﻿package com.inskin.app
-import android.nfc.Tag
-import android.nfc.tech.Ndef
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+package com.inskin.app
 
-data class TagInfo(
-    val title: String,
-    val uid: String,
-    val total: Int,
-    val used: Int,
-    val name: String = "NextV2",
-    val locked: Boolean = false
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+
+data class SimpleTag(
+    val uidHex: String = "",
+    val name: String = ""
 )
 
-sealed interface UiState {
-    data object Scanning : UiState
-    data class Loading(val uid: String) : UiState
-    data class Loaded(val info: TagInfo) : UiState
-}
-
 class NfcViewModel : ViewModel() {
-    private val _state = MutableStateFlow<UiState>(UiState.Scanning)
-    val state = _state.asStateFlow()
 
-    fun handleTag(tag: Tag) {
-        val uid = tag.id?.joinToString(":") { String.format("%02X", it) } ?: "UNKNOWN"
-        _state.value = UiState.Loading(uid)
-        viewModelScope.launch {
-            val ndef = Ndef.get(tag)
-            val total = ndef?.maxSize ?: 888
-            val used = 100
-            val title = "NTAG216 (NXP)"
-            delay(600) // donne le temps d’afficher l’animation "lecture"
-            _state.value = UiState.Loaded(TagInfo(title = title, uid = uid, total = total, used = used))
-        }
+    // UI attend un tag au démarrage
+    private val _isWaiting = mutableStateOf(true)
+    val isWaiting: State<Boolean> = _isWaiting
+
+    // Dernier tag lu (nullable)
+    private val _lastTag = mutableStateOf<SimpleTag?>(null)
+    val lastTag: State<SimpleTag?> = _lastTag
+
+    fun startWaiting() {
+        _isWaiting.value = true
     }
 
-    fun backToScan() { _state.value = UiState.Scanning }
+    fun updateTag(uidHex: String, name: String = "") {
+        _lastTag.value = SimpleTag(uidHex = uidHex, name = name)
+        _isWaiting.value = false
+    }
 }
