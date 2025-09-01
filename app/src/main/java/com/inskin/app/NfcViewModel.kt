@@ -32,6 +32,7 @@ data class SimpleTag(
     val locked: Boolean
 )
 
+
 /** Snapshot d’historique persisté */
 data class SavedTag(
     val uidHex: String,
@@ -47,10 +48,15 @@ data class SavedTag(
 
 class NfcViewModel(app: Application) : AndroidViewModel(app) {
 
+    val pm3Status = mutableStateOf(com.inskin.app.usb.ProxmarkStatus.NotPresent)
+
     /* ---------- UI states ---------- */
     val isWaiting = mutableStateOf(true)
     val lastTag = mutableStateOf<SimpleTag?>(null)
     val lastDetails = mutableStateOf<TagDetails?>(null)
+
+    // Connexion Proxmark3
+    val pm3Connected = mutableStateOf(false)
 
     // Déverrouillage (NTAG/Ultralight uniquement)
     val showAuthDialog = mutableStateOf(false)
@@ -72,6 +78,15 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         history.value = loadHistory()
+
+        val pm = com.inskin.app.usb.ProxmarkLocator.get(getApplication())
+        pm.scanExisting()
+
+        viewModelScope.launch {
+            com.inskin.app.usb.ProxmarkLocator.status.collect { s ->
+                pm3Status.value = s
+            }
+        }
     }
 
     /* ===================== API ===================== */

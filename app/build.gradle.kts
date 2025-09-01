@@ -77,7 +77,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
 
   // USB serial + coroutines
-  implementation("com.hoho.android.usbserial:usb-serial-for-android:3.7.0")
+  implementation("com.github.mik3y:usb-serial-for-android:3.7.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
   // Tests

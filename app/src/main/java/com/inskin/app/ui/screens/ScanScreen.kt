@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -31,7 +30,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.inskin.app.R as AppR
 import androidx.compose.material3.*
 import androidx.compose.animation.core.*
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontFamily
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +52,21 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import com.inskin.app.usb.ProxmarkStatus
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+
+
 
 private const val L_FLOW = "ScanFlow"
 private const val L_UI   = "ScanUI"
@@ -152,6 +165,8 @@ fun ScanScreen(
     onOpenList: () -> Unit,
     onOpenSettings: () -> Unit = {}
 ) {
+    val status = vm.pm3Status.value
+
     val homeScroll = rememberScrollState()
     var homeExpanded by rememberSaveable { mutableStateOf(false) }
     var homeAngle by rememberSaveable { mutableFloatStateOf(0f) }
@@ -162,11 +177,15 @@ fun ScanScreen(
     val tag = vm.lastTag.value
     val details = vm.lastDetails.value
 
-    val iconByUid = rememberSaveable(saver = Saver(
-        save = { HashMap(it) }, restore = { saved -> mutableStateMapOf<String, String>().apply { putAll(saved) } }
+    val iconByUid = rememberSaveable(
+        saver = Saver(
+        save = { HashMap(it) },
+        restore = { saved -> mutableStateMapOf<String, String>().apply { putAll(saved) } }
     )) { mutableStateMapOf<String, String>() }
-    val nameByUid = rememberSaveable(saver = Saver(
-        save = { HashMap(it) }, restore = { saved -> mutableStateMapOf<String, String>().apply { putAll(saved) } }
+    val nameByUid = rememberSaveable(
+        saver = Saver(
+            save = { HashMap(it) },
+        restore = { saved -> mutableStateMapOf<String, String>().apply { putAll(saved) } }
     )) { mutableStateMapOf<String, String>() }
 
     if (vm.showAuthDialog.value) {
@@ -201,19 +220,21 @@ fun ScanScreen(
     LaunchedEffect(needBusyNow, curUid, detUid, vm.authBusy.value) { setBusy(needBusyNow) }
 
     Box(
-        Modifier.fillMaxSize().pointerInput(historyOpen) {
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
-                val w = this.size.width.toFloat()
-                if (down.position.x > w * 0.92f) {
-                    var dx = 0f
-                    drag(down.id) { change: PointerInputChange ->
-                        dx += change.positionChange().x
-                        if (!historyOpen && dx < -40f) historyOpen = true
+        Modifier
+            .fillMaxSize()
+            .pointerInput(historyOpen) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val w = this.size.width.toFloat()
+                    if (down.position.x > w * 0.92f) {
+                        var dx = 0f
+                        drag(down.id) { change: PointerInputChange ->
+                            dx += change.positionChange().x
+                            if (!historyOpen && dx < -40f) historyOpen = true
+                        }
                     }
                 }
             }
-        }
     ) {
         if (tag == null) {
             // Accueil
@@ -221,6 +242,8 @@ fun ScanScreen(
                 verticalOffset = 0.dp,
                 belowCircleGap = 32.dp,
                 textSpacer = 16.dp,
+                showBubble = (status == ProxmarkStatus.Ready) && !historyOpen, // ← ici
+                status = status,
                 onOpenList = onOpenList,
                 onOpenSettings = onOpenSettings,
                 onTapHistory = { historyOpen = true },
@@ -230,12 +253,13 @@ fun ScanScreen(
                 angle = homeAngle,
                 onAngleChange = { homeAngle = it }
             )
+
+
         } else {
             // Page Tag détecté
             val uidStr = curUid!!
             val selectedForm = iconByUid[uidStr]?.let { BadgeForm.valueOf(it) }
 
-            // Nom préféré : map → historique → valeur du tag
             val fromHistoryName = remember(itemsSorted, uidStr) {
                 itemsSorted.firstOrNull { it.uidHex.equals(uidStr, ignoreCase = true) }?.name
             }
@@ -255,30 +279,32 @@ fun ScanScreen(
                 canAskUnlock = vm.canAskUnlock.value,
                 onAskUnlock = { vm.askUnlock() },
                 onOpenWrite = onOpenWrite,
-                onOpenHistory = { historyOpen = true },   // <- ouvre l’overlay Historique
+                onOpenHistory = { historyOpen = true },
                 onBack = { vm.startWaiting() },
                 selectedForm = selectedForm,
                 onPickForm = { form -> iconByUid[uidStr] = form.name },
                 onRename = { newName -> nameByUid[uidStr] = newName }
             )
-
-            // IMPORTANT : plus d’icône Historique ici pour éviter le doublon.
-            // L’icône Historique est gérée dans TagHeaderPage (en haut-droite).
         }
 
         if (historyOpen) {
             HistoryFullScreen(
                 rows = historyUi,
                 onClose = { historyOpen = false },
-                onSelect = { uid -> vm.selectFromHistory(uid); historyOpen = false }
+                onSelect = { uid ->
+                    vm.selectFromHistory(uid)
+                    historyOpen = false
+                }
             )
         }
 
         if (busy.value) {
-            ReadBusyDialog(onCancel = {
-                vm.startWaiting()
-                setBusy(false)
-            })
+            ReadBusyDialog(
+                onCancel = {
+                    vm.startWaiting()
+                    setBusy(false)
+                }
+            )
         }
     }
 }
@@ -289,6 +315,8 @@ private fun ScanIdleScreen(
     verticalOffset: Dp = 0.dp,
     belowCircleGap: Dp = 30.dp,
     textSpacer: Dp = 20.dp,
+    showBubble: Boolean,
+    status: ProxmarkStatus,
     onOpenList: () -> Unit,
     onOpenSettings: () -> Unit,
     onTapHistory: () -> Unit,
@@ -299,22 +327,19 @@ private fun ScanIdleScreen(
     onAngleChange: (Float) -> Unit
 ) {
     val sw = LocalConfiguration.current.screenWidthDp.dp
-    val sh = LocalConfiguration.current.screenHeightDp.dp
     val disc = (sw * 0.62f).coerceAtMost(380.dp)
-
-    // <-- Ajout : offset vertical réglable
     val circleOffsetY = verticalOffset
 
     Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // <-- Centre verticalement
+            verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
                     .size(disc)
-                    .offset(y = circleOffsetY), // <-- Offset appliqué ici
+                    .offset(y = circleOffsetY),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -325,8 +350,8 @@ private fun ScanIdleScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     BreathingTag(
-                        logoScale = 1.2f,   // occupe 92 % du cercle
-                        logoOffsetY = (3.5).dp // petit décalage vers le haut
+                        logoScale = 1.2f,
+                        logoOffsetY = 3.5.dp
                     )
                 }
             }
@@ -339,10 +364,25 @@ private fun ScanIdleScreen(
                 color = Color(0xFF3E3E3E)
             )
             Spacer(Modifier.height(textSpacer))
-            TypingDots(dotSize = 10.dp, spacing = 10.dp)
+            TypingDots(dotSize = 20.dp, spacing = 20.dp)
         }
 
-        // Boutons haut/bas (inchangés)
+        // Overlay centré sous les points, n’impacte pas la mise en page
+        if (showBubble && status == ProxmarkStatus.Ready) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                ProxmarkFab(
+                    status = status,
+                    modifier = Modifier.offset(y = 300.dp)
+                )
+            }
+        }
+
+        // Boutons haut/bas
         IconButton(
             onClick = {},
             enabled = false,
@@ -437,6 +477,52 @@ fun TypingDots(dotSize: Dp = 10.dp, spacing: Dp = 10.dp) {
                     .background(MaterialTheme.colorScheme.onSurface)
             )
         }
+    }
+}
+
+@Composable
+private fun ProxmarkFab(
+    status: ProxmarkStatus,
+    onClick: () -> Unit = {},
+    diameter: Dp = 56.dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier
+            .size(diameter)
+            .shadow(6.dp, CircleShape, clip = false)
+            .background(Color.Black, CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(Modifier.fillMaxSize().padding(14.dp)) {
+            val minDim = this.size.minDimension
+            drawCircle(Color.White, radius = minDim * 0.12f)
+            listOf(0.28f, 0.42f, 0.56f).forEach { r ->
+                drawCircle(Color.White, radius = minDim * r, style = Stroke(width = 2.5f, cap = StrokeCap.Round))
+            }
+            drawLine(
+                color = Color.Black,
+                start = center + Offset(0f, -minDim * 0.56f),
+                end   = center + Offset(0f, -minDim * 0.28f),
+                strokeWidth = 5f,
+                cap = StrokeCap.Round
+            )
+        }
+        val badge = when (status) {
+            ProxmarkStatus.Ready -> Color(0xFF22C55E)
+            ProxmarkStatus.Initializing -> Color(0xFFF59E0B)
+            ProxmarkStatus.NotPresent -> Color(0xFF9CA3AF)
+            ProxmarkStatus.NoAccess, ProxmarkStatus.Error -> Color(0xFFEF4444)
+        }
+        Box(
+            Modifier
+                .align(Alignment.TopStart)
+                .offset(x = (-4).dp, y = (-4).dp)
+                .size(14.dp)
+                .shadow(2.dp, CircleShape)
+                .background(badge, CircleShape)
+        )
     }
 }
 
