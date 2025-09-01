@@ -1,8 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.NFC"/>
 
-    <!-- Le device doit avoir du NFC -->
+    <uses-permission android:name="android.permission.NFC"/>
     <uses-feature android:name="android.hardware.nfc" android:required="true"/>
+
+    <uses-feature android:name="android.hardware.usb.host" android:required="true"/>
 
     <application
         android:allowBackup="true"
@@ -23,23 +24,32 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Détection générique -->
             <intent-filter>
                 <action android:name="android.nfc.action.TAG_DISCOVERED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
-            <!-- NDEF -->
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="text/plain"/>
             </intent-filter>
 
-            <!-- Tech discovery via fichier xml -->
             <meta-data
                 android:name="android.nfc.action.TECH_DISCOVERED"
                 android:resource="@xml/nfc_tech_filter"/>
         </activity>
+
+        <!-- Receiver USB: DOIT être exporté sous Android 12+ -->
+        <receiver
+            android:name=".usb.UsbAttachReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"/>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED"/>
+                <action android:name="com.inskin.app.USB_PERMISSION"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 </manifest>

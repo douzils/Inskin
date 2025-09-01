@@ -9,16 +9,18 @@ package com.inskin.app.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.AlertDialog
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,12 +43,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.inskin.app.TagDetails
 import com.inskin.app.R as AppR
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.foundation.clickable
+
 
 @Composable
-// TagHeaderPage.kt – signature
 fun TagHeaderPage(
     title: String,
     uid: String,
@@ -59,9 +59,9 @@ fun TagHeaderPage(
     selectedForm: BadgeForm?,
     onPickForm: (BadgeForm) -> Unit,
     onRename: (String) -> Unit,
+    onOpenHistory: () -> Unit = {},
     onOpenWrite: () -> Unit = {},
-    onOpenList: () -> Unit = {},
-    onRequestGoDown: () -> Unit = {}   // <—
+    onRequestGoDown: () -> Unit = {}
 ) {
     var editing by remember { mutableStateOf(false) }
     var draft by remember(name) { mutableStateOf(name) }
@@ -81,32 +81,34 @@ fun TagHeaderPage(
 
     Box(Modifier.fillMaxSize()) {
 
-        Box(Modifier.fillMaxWidth()) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 8.dp, top = 4.dp)
-            ) { Icon(Icons.Filled.ChevronLeft, contentDescription = "Retour", tint = Color.Black) }
+        // Ligne de boutons en haut-droite : Historique + Retour
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ChevronLeft, contentDescription = "Retour", tint = Color.Black)
+            }
+            IconButton(onClick = onOpenHistory) {   // <-- utilisait onOpenList avant
+                Icon(Icons.Filled.History, contentDescription = "Historique", tint = Color.Black)
+            }
         }
 
         Column(
-            Modifier
-                .fillMaxSize()
-                .padding(top = 36.dp)
+            Modifier.fillMaxSize().padding(top = 36.dp)
         ) {
             TagHeaderPageTitle(title = title, uid = uid, typeDetail = typeDetail, centered = true)
-
             Spacer(Modifier.height(6.dp))
 
             val topBoxHeight = disc * 2.05f
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(topBoxHeight),
+                Modifier.fillMaxWidth().height(topBoxHeight),
                 contentAlignment = Alignment.TopCenter
             ) {
-                // Cercle central sans options
                 Box(
                     modifier = Modifier
                         .size(disc)
@@ -115,7 +117,7 @@ fun TagHeaderPage(
                         .clip(CircleShape)
                         .background(Color(0xFF3E3E3E))
                         .combinedClickable(
-                            onClick = { /* aucune option à ouvrir */ },
+                            onClick = { /* pas d’options */ },
                             onLongClick = { showFormDialog = true }
                         ),
                     contentAlignment = Alignment.Center
@@ -140,35 +142,23 @@ fun TagHeaderPage(
                     if (ndefCount > 0) {
                         StackedCounter(
                             count = ndefCount,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(6.dp)
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp)
                         )
                     }
                 }
 
                 // Indicateur de verrouillage
                 Box(
-                    modifier = Modifier
-                        .size(disc)
-                        .offset(y = disc + circleY)
-                        .zIndex(9f),
+                    modifier = Modifier.size(disc).offset(y = disc + circleY).zIndex(9f),
                     contentAlignment = Alignment.TopEnd
                 ) {
                     Box(
-                        modifier = Modifier
-                            .offset(x = 10.dp, y = (-10).dp)
-                            .size(36.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.offset(x = 10.dp, y = (-10).dp)
+                            .size(36.dp).clip(CircleShape)
                             .background(if (fullyOpen) Color(0xFF2ECC71) else Color(0xCC000000)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = if (fullyOpen) Icons.Filled.LockOpen else Icons.Filled.Lock,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Icon(if (fullyOpen) Icons.Filled.LockOpen else Icons.Filled.Lock, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         if (!fullyOpen) {
                             val label = when {
                                 fullyLocked -> "RW"
@@ -182,9 +172,7 @@ fun TagHeaderPage(
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .offset(x = (-3).dp, y = (-2).dp)
+                                    modifier = Modifier.align(Alignment.BottomEnd).offset(x = (-3).dp, y = (-2).dp)
                                 )
                             }
                         }
@@ -275,7 +263,7 @@ fun TagHeaderPage(
                 .navigationBarsPadding()
                 .padding(bottom = 8.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .clickable(onClick = onRequestGoDown)   // <- tap to next
+                .clickable(onClick = onRequestGoDown)
                 .padding(vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -293,7 +281,7 @@ fun TagHeaderPage(
         FormPickerDialog(
             selected = selectedForm,
             onDismiss = { showFormDialog = false },
-            onPick = { picked -> onPickForm(picked); showFormDialog = false }
+            onPick = { picked -> onPickForm(picked); showFormDialog = false } // ← corrige la référence
         )
     }
 }
