@@ -1,574 +1,245 @@
 package com.inskin.app
 
 import android.app.Application
-import android.content.Context
 import android.nfc.Tag
-import android.nfc.NdefMessage
-import android.nfc.NdefRecord
-import android.nfc.tech.*
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.inskin.app.ui.screens.EntryKind
-import com.inskin.app.ui.screens.WriteEntry
+import androidx.room.Room
+import com.inskin.app.data.TagRepository
+import com.inskin.app.data.db.AppDb
+import com.inskin.app.tags.InspectorUtils
+import com.inskin.app.tags.NfcRfidInspectorRouter
+import com.inskin.app.tags.nfc.KeysRepository
+import com.inskin.app.usb.ProxmarkStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import android.os.SystemClock
-import android.util.Log
 
-/* --------- Modèles --------- */
 data class SimpleTag(
-    val typeLabel: String,
-    val typeDetail: String?,
     val uidHex: String,
-    val name: String,
-    val used: Int,
-    val total: Int,
-    val locked: Boolean
+    val name: String = "Tag",
+    val used: Int = 0,
+    val total: Int = 0,
+    val locked: Boolean = false,
+    val typeLabel: String = "NFC",
+    val typeDetail: String? = null
 )
 
-
-/** Snapshot d’historique persisté */
-data class SavedTag(
-    val uidHex: String,
-    val name: String,
-    val typeLabel: String,
-    val typeDetail: String?,
-    val total: Int,
-    val used: Int,
-    val locked: Boolean,
-    val savedAt: Long,
-    val favorite: Boolean = false
-)
+data class SavedTag(val uidHex: String, val savedAt: Long, val name: String = "Tag")
 
 class NfcViewModel(app: Application) : AndroidViewModel(app) {
 
-    val pm3Status = mutableStateOf(com.inskin.app.usb.ProxmarkStatus.NotPresent)
-
-    /* ---------- UI states ---------- */
-    val isWaiting = mutableStateOf(true)
+    // UI state
+    val history = mutableStateListOf<SavedTag>()
     val lastTag = mutableStateOf<SimpleTag?>(null)
     val lastDetails = mutableStateOf<TagDetails?>(null)
 
-    // Connexion Proxmark3
-    val pm3Connected = mutableStateOf(false)
-
-    // Déverrouillage (NTAG/Ultralight uniquement)
     val showAuthDialog = mutableStateOf(false)
     val authBusy = mutableStateOf(false)
     val authError = mutableStateOf<String?>(null)
     val canAskUnlock = mutableStateOf(false)
 
-    // Mot de passe dévoilé (si succès)
-    val disclosedPwdHex = mutableStateOf<String?>(null)
+    val phoneSignalLevel = mutableStateOf(0)
+    val liveLogs = mutableStateListOf<String>()
+    val pm3Status = mutableStateOf(ProxmarkStatus.NotPresent)
 
-    // Historique observable
-    val history = mutableStateOf<List<SavedTag>>(emptyList())
+    // caches
+    private val detailsCache = HashMap<String, TagDetails>() // key = UID uppercase
+    private val uidToId = LinkedHashMap<String, Int>()
+    private var nextId = 1
+    private fun idFor(uidHex: String): Int = uidToId.getOrPut(uidHex.uppercase()) { nextId++ }
 
-    /* ---------- internals ---------- */
-    private val prefs = app.getSharedPreferences("nfc_prefs", Context.MODE_PRIVATE)
-    private var lastAndroidTag: Tag? = null
-    private var lastTagSeenAt: Long = 0L
-    private var pendingWrite: Pair<List<WriteEntry>, (Boolean) -> Unit>? = null
+    // DB repo
+    private val repo: TagRepository by lazy {
+        val db = Room.databaseBuilder(getApplication(), AppDb::class.java, "inskin.db").build()
+        TagRepository(db.tagDao())
+    }
 
     init {
-        history.value = loadHistory()
-
-        val pm = com.inskin.app.usb.ProxmarkLocator.get(getApplication())
-        pm.scanExisting()
-
-        viewModelScope.launch {
-            com.inskin.app.usb.ProxmarkLocator.status.collect { s ->
-                pm3Status.value = s
+        // Charger l’historique persistant
+        viewModelScope.launch(Dispatchers.IO) {
+            repo.history().collect { list ->
+                withContext(Dispatchers.Main) {
+                    history.clear()
+                    history.addAll(list.map { SavedTag(it.uidHex, it.lastSeen, it.name) })
+                }
             }
         }
     }
-
-    /* ===================== API ===================== */
 
     fun startWaiting() {
-        isWaiting.value = true
         lastTag.value = null
         lastDetails.value = null
-        disclosedPwdHex.value = null
+        canAskUnlock.value = false
+        authBusy.value = false
+        showAuthDialog.value = false
+        liveLogs.clear()
+        liveLogs.add("En attente d’un tag…")
     }
 
-    fun askUnlock() {
-        authError.value = null
-        showAuthDialog.value = true
+    private fun upsertHistory(uidHex: String, name: String) {
+        val u = uidHex.uppercase()
+        val i = history.indexOfFirst { it.uidHex.equals(u, true) }
+        val now = System.currentTimeMillis()
+        if (i >= 0) history[i] = history[i].copy(savedAt = now, name = name)
+        else history.add(0, SavedTag(u, now, name))
     }
 
-    /** Charger un tag depuis l’historique (comme s’il venait d’être scanné). */
-    fun selectFromHistory(uid: String) {
-        val s = history.value.firstOrNull { it.uidHex.equals(uid, true) } ?: return
-        isWaiting.value = false
-        lastDetails.value = null
-        lastTag.value = SimpleTag(
-            typeLabel = s.typeLabel,
-            typeDetail = s.typeDetail,
-            uidHex = s.uidHex,
-            name = s.name,
-            used = s.used,
-            total = s.total,
-            locked = s.locked
-        )
-    }
-
-    /**
-     * Déverrouillage NTAG/Ultralight (PWD_AUTH 0x1B).
-     */
-    fun submitNtagPassword(pwdHex: String, remember: Boolean) {
-        val tag = lastAndroidTag ?: return
-        val pwd = parsePwd(pwdHex) ?: run {
-            authError.value = "Mot de passe invalide (4 octets HEX)"
+    fun selectFromHistory(uidHex: String) {
+        val u = uidHex.uppercase()
+        val cached = detailsCache[u]
+        if (cached != null) {
+            val used = cached.rawReadableBytes
+                ?: cached.classicSectors?.sumOf { s -> s.blocks.sumOf { b -> b.dataHex?.length?.div(2) ?: 0 } }
+                ?: 0
+            val type = cached.chipType ?: "NFC Tag"
+            val name = history.firstOrNull { it.uidHex.equals(u, true) }?.name ?: type
+            lastDetails.value = cached
+            lastTag.value = SimpleTag(
+                uidHex = cached.uidHex,
+                typeLabel = type,
+                typeDetail = cached.versionHex ?: cached.memoryLayout ?: "",
+                name = name,
+                used = used,
+                total = cached.totalMemoryBytes ?: used,
+                locked = false
+            )
+            liveLogs.add("Ouverture depuis l’historique (cache): $u")
             return
         }
+
+        // Fallback: snapshot DB
+        viewModelScope.launch(Dispatchers.IO) {
+            repo.snapshot(u).collect { snap ->
+                if (snap != null) {
+                    withContext(Dispatchers.Main) {
+                        lastDetails.value = null
+                        lastTag.value = SimpleTag(
+                            uidHex = snap.uidHex,
+                            typeLabel = snap.typeLabel ?: "NFC",
+                            typeDetail = snap.typeDetail ?: "",
+                            name = snap.name,
+                            used = snap.usedBytes,
+                            total = snap.totalBytes,
+                            locked = snap.locked
+                        )
+                        liveLogs.add("Ouverture depuis l’historique (DB): $u")
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        val name = history.firstOrNull { it.uidHex.equals(u, true) }?.name ?: "Tag"
+                        lastDetails.value = null
+                        lastTag.value = SimpleTag(uidHex = u, typeLabel = "Historique", name = name)
+                        liveLogs.add("Historique: pas de snapshot DB pour $u")
+                    }
+                }
+            }
+        }
+    }
+
+    fun askUnlock() { showAuthDialog.value = true }
+
+    fun submitNtagPassword(pwdHex: String, remember: Boolean) {
         authBusy.value = true
-        authError.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                withContext(Dispatchers.Main) {
+                    authError.value = null
+                    showAuthDialog.value = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { authError.value = e.message }
+            } finally {
+                withContext(Dispatchers.Main) { authBusy.value = false }
+            }
+        }
+    }
+
+    fun updateTag(tag: Tag) {
+        // hooks logs inspecteurs
+        InspectorUtils.emitLog = { msg -> viewModelScope.launch { liveLogs.add(msg) } }
+
+        val keysRepo = KeysRepository(getApplication())
+        InspectorUtils.extraKeysProvider = { keysRepo.loadAllFromAssets() }
+        val count = keysRepo.loadAllFromAssets().size
+        viewModelScope.launch { liveLogs.add("Clés chargées: $count") }
+
+        InspectorUtils.onKeyLearned = { uid: String, sec: Int, type: String, key: String ->
+            viewModelScope.launch { liveLogs.add("Clé apprise $type S$sec = $key") }
+        }
+
+        // overlay immédiat
+        val uidHex = (tag.id ?: ByteArray(0)).toHex()
+        lastTag.value = SimpleTag(uidHex = uidHex, typeLabel = "Lecture…")
 
         viewModelScope.launch(Dispatchers.IO) {
-            val ok = runCatching {
-                val a = NfcA.get(tag) ?: return@runCatching false
-                a.connect()
-                val resp = a.transceive(byteArrayOf(0x1B.toByte()) + pwd)
-                a.close()
-                resp != null && resp.size >= 2
-            }.getOrElse { false }
+            try {
+                val channel = com.inskin.app.tags.Channel.Android(tag)
+                val result = NfcRfidInspectorRouter.firstSupporting(channel).read(channel)
 
-            withContext(Dispatchers.Main) {
-                if (!ok) {
-                    authBusy.value = false
-                    authError.value = "Échec de l'authentification"
-                    return@withContext
-                }
-                val uid = getUid(tag)
-                val hexUpper = pwdHex.uppercase()
-                if (remember) savePwd(uid, hexUpper)
-                disclosedPwdHex.value = hexUpper
-                authBusy.value = false
-                showAuthDialog.value = false
-                updateTag(tag, forceNameReuse = true)
-            }
-        }
-    }
+                withContext(Dispatchers.Main) {
+                    val d = result.details
+                    lastDetails.value = d
 
-    /** Appelé quand un Tag est détecté. */
-    fun updateTag(tag: Tag, forceNameReuse: Boolean = false) {
-        isWaiting.value = false
-        lastAndroidTag = tag
-        lastTagSeenAt = SystemClock.elapsedRealtime()
-        disclosedPwdHex.value = null
-        lastDetails.value = null
+                    val key = d.uidHex.uppercase()
+                    detailsCache[key] = d
 
-        val uidHex = getUid(tag)
-        val typeLabel = guessTypeLabel(tag)
-        val typeDetail: String? = null
-        val isClassic = (MifareClassic.get(tag) != null)
+                    val usedBytes = d.rawReadableBytes
+                        ?: d.classicSectors?.sumOf { s -> s.blocks.sumOf { b -> b.dataHex?.length?.div(2) ?: 0 } }
+                        ?: 0
 
-        // Nom persistant (par UID) ou génération Type #n
-        val name = prefs.getString("name_$uidHex", null) ?: run {
-            val count = prefs.getInt("count_$typeLabel", 0) + 1
-            prefs.edit { putInt("count_$typeLabel", count) }
-            "$typeLabel #$count"
-        }
+                    val idNum = idFor(d.uidHex)
+                    val typeLabel = d.chipType ?: "NFC Tag"
+                    val typeDetail = d.versionHex ?: d.memoryLayout ?: ""
+                    val displayName = "$typeLabel #$idNum"
 
-        // Déverrouillage proposé seulement pour NTAG/Ultralight
-        canAskUnlock.value =
-            !isClassic && (MifareUltralight.get(tag) != null || NfcA.get(tag) != null)
+                    lastTag.value = SimpleTag(
+                        uidHex = d.uidHex,
+                        typeLabel = typeLabel,
+                        typeDetail = typeDetail,
+                        name = displayName,
+                        used = usedBytes,
+                        total = d.totalMemoryBytes ?: usedBytes,
+                        locked = false
+                    )
 
-        // 👇👇👇  AJOUT IMPORTANT : publier un snapshot immédiat pour déclencher la pop-up
-        val earlySnap = SimpleTag(
-            typeLabel = typeLabel,
-            typeDetail = typeDetail,
-            uidHex = uidHex,
-            name = if (forceNameReuse) (prefs.getString("name_$uidHex", name) ?: name) else name,
-            used = 0,           // inconnus pour l’instant
-            total = 0,
-            locked = false
-        )
-        lastTag.value = earlySnap
-        Log.d("ScanFlow", "early lastTag posted -> $uidHex")
-        viewModelScope.launch(Dispatchers.IO) {
-            // Tentative auto si mot de passe mémorisé (NTAG)
-            val saved = loadPwd(uidHex)
-            if (!isClassic && !saved.isNullOrBlank()) {
-                runCatching {
-                    val a = NfcA.get(tag)
-                    if (a != null) {
-                        a.connect()
-                        parsePwd(saved)?.let { pwd -> a.transceive(byteArrayOf(0x1B) + pwd) }
-                        a.close()
-                        withContext(Dispatchers.Main) { disclosedPwdHex.value = saved }
+                    // Historique UI + persistance du nom
+                    upsertHistory(d.uidHex, displayName)
+                    viewModelScope.launch(Dispatchers.IO) { repo.rename(d.uidHex, displayName) }
+
+                    // Persist snapshot + dump
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            val dump = bestEffortDump(d)
+                            repo.saveRead(details = d, rawDump = dump, source = "android", format = "bin")
+                        } catch (_: Exception) { }
                     }
+
+                    liveLogs.add("Lecture terminée: ${d.chipType}")
+                    canAskUnlock.value = false
                 }
-            }
-
-            // Lecture rapide NDEF
-            var usedNdefApi = 0
-            var totalNdefApi = 0
-            var lockedNdef = false
-            runCatching {
-                val ndef = Ndef.get(tag)
-                ndef?.connect()
-                val msg = ndef?.cachedNdefMessage ?: ndef?.ndefMessage
-                usedNdefApi = msg?.toByteArray()?.size ?: 0
-                totalNdefApi = ndef?.maxSize ?: 0
-                lockedNdef = (ndef?.isWritable == false)
-                runCatching { ndef?.close() }
-            }
-
-            // Détails riches
-            val det = NfcInspector.inspect(tag)
-
-            // Classic
-            val classicUsage = if (isClassic) readClassicUsage(tag) else null
-            val classicReadable = (classicUsage != null) || quickClassicAuth(tag)
-
-            val usedFinal = when {
-                classicUsage?.used != null -> classicUsage.used
-                det.usedBytes != null -> det.usedBytes
-                isClassic && !classicReadable -> -1
-                else -> usedNdefApi
-            }
-
-            val totalFinal = when {
-                classicUsage != null -> classicUsage.capacity
-                det.ndefCapacity != null -> det.ndefCapacity
-                else -> totalNdefApi
-            }
-
-            val lockedFinal =
-                if (isClassic) !classicReadable
-                else det.isNdefWritable?.let { !it } ?: lockedNdef
-
-            withContext(Dispatchers.Main) {
-                lastDetails.value = det
-                val snap = SimpleTag(
-                    typeLabel = typeLabel,
-                    typeDetail = typeDetail,
-                    uidHex = uidHex,
-                    name = if (forceNameReuse) (prefs.getString("name_$uidHex", name)
-                        ?: name) else name,
-                    used = usedFinal,
-                    total = totalFinal,
-                    locked = lockedFinal
-                )
-                lastTag.value = snap
-                saveInHistory(snap)   // <-- enregistre à chaque scan
-                tryWriteNow(tag)      // tentative d’écriture si en attente
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { liveLogs.add("Erreur: ${e.message}") }
+            } finally {
+                InspectorUtils.emitLog = null
+                InspectorUtils.onKeyLearned = null
             }
         }
     }
 
-    /* ===================== Write queue ===================== */
+    private fun bestEffortDump(details: TagDetails): ByteArray {
+        val head = details.rawDumpFirstBytesHex.orEmpty()
+            .chunked(2).mapNotNull { it.toIntOrNull(16)?.toByte() }.toByteArray()
 
-    fun queueWrite(
-        entries: List<WriteEntry>,
-        result: (Boolean) -> Unit
-    ) {
-        pendingWrite = entries to result
-        val tag = lastAndroidTag
-        val fresh = tag != null && (SystemClock.elapsedRealtime() - lastTagSeenAt) < 2_000L
-        if (fresh) tryWriteNow(tag)
-    }
+        val classic = details.classicSectors.orEmpty()
+            .flatMap { it.blocks }
+            .mapNotNull { it.dataHex }
+            .flatMap { hex -> hex.chunked(2).mapNotNull { it.toIntOrNull(16)?.toByte() } }
+            .toByteArray()
 
-    private fun tryWriteNow(tag: Tag) {
-        val pair = pendingWrite ?: return
-        val (entries, cb) = pair
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val ok = runCatching {
-                val msg = toNdefMessage(entries)
-
-                // 1) NDEF présent
-                Ndef.get(tag)?.let { ndef ->
-                    ndef.connect()
-                    val fits = msg.toByteArray().size <= ndef.maxSize
-                    val writable = ndef.isWritable
-                    val success = fits && writable && runCatching { ndef.writeNdefMessage(msg) }.isSuccess
-                    runCatching { ndef.close() }
-                    success
-                } ?: run {
-                    // 2) Formatage NDEF
-                    NdefFormatable.get(tag)?.let { fmt ->
-                        fmt.connect()
-                        val success = runCatching { fmt.format(msg) }.isSuccess
-                        runCatching { fmt.close() }
-                        success
-                    } ?: false
-                }
-            }.getOrDefault(false)
-
-            withContext(Dispatchers.Main) {
-                cb(ok)
-                if (ok) updateTag(tag, forceNameReuse = true)
-                pendingWrite = null
-            }
-        }
-    }
-
-    /* ===================== Helpers ===================== */
-
-    private fun getUid(tag: Tag): String = (tag.id ?: ByteArray(0)).toHex()
-
-    private fun guessTypeLabel(tag: Tag): String =
-        when {
-            MifareClassic.get(tag) != null -> {
-                val size = MifareClassic.get(tag)?.size ?: 0
-                if (size <= 1024) "MIFARE Classic 1K" else "MIFARE Classic 4K"
-            }
-            MifareUltralight.get(tag)?.type == MifareUltralight.TYPE_ULTRALIGHT_C -> "MIFARE Ultralight C"
-            NfcA.get(tag) != null -> "NTAG/Ultralight"
-            IsoDep.get(tag) != null -> "ISO-DEP"
-            NfcV.get(tag) != null -> "NfcV"
-            NfcF.get(tag) != null -> "NfcF"
-            NfcB.get(tag) != null -> "NfcB"
-            else -> "NFC Tag"
-        }
-
-    /** "A1B2C3D4" -> 0xA1 0xB2 0xC3 0xD4 */
-    private fun parsePwd(input: String): ByteArray? {
-        val s = input.trim().replace(" ", "").uppercase()
-        if (s.length != 8) return null
-        if (!s.all { it.isDigit() || it in 'A'..'F' }) return null
-        return ByteArray(4) { i -> s.substring(i * 2, i * 2 + 2).toInt(16).toByte() }
-    }
-
-    private fun savePwd(uidHex: String, pwdHex: String) {
-        prefs.edit { putString("pwd_$uidHex", pwdHex) }
-    }
-
-    fun loadPwd(uidHex: String): String? = prefs.getString("pwd_$uidHex", null)
-
-    /* ---------- MIFARE Classic ---------- */
-
-    private val commonKeys: List<ByteArray> = listOf(
-        byteArrayOf(0xFF.toByte(),0xFF.toByte(),0xFF.toByte(),0xFF.toByte(),0xFF.toByte(),0xFF.toByte()),
-        byteArrayOf(0xA0.toByte(),0xA1.toByte(),0xA2.toByte(),0xA3.toByte(),0xA4.toByte(),0xA5.toByte()),
-        byteArrayOf(0xD3.toByte(),0xF7.toByte(),0xD3.toByte(),0xF7.toByte(),0xD3.toByte(),0xF7.toByte()),
-        byteArrayOf(0,0,0,0,0,0),
-        byteArrayOf(0xB0.toByte(),0xB1.toByte(),0xB2.toByte(),0xB3.toByte(),0xB4.toByte(),0xB5.toByte()),
-        byteArrayOf(0x4D,0x3A,0x99.toByte(),0xC3.toByte(),0x51,0xDD.toByte()),
-        byteArrayOf(0x1A,0x2B,0x3C,0x4D,0x5E,0x6F)
-    )
-
-    /** Auth rapide (quelques secteurs) avec clés courantes. */
-    private fun quickClassicAuth(tag: Tag): Boolean = runCatching {
-        val mc = MifareClassic.get(tag) ?: return false
-        mc.connect()
-        mc.use {
-            val sectorsToTry = listOf(0, 1).filter { it < mc.sectorCount }
-            for (s in sectorsToTry) {
-                val ok = commonKeys.any { k ->
-                    mc.authenticateSectorWithKeyA(s, k) || mc.authenticateSectorWithKeyB(s, k)
-                }
-                if (ok) return true
-            }
-        }
-        false
-    }.getOrDefault(false)
-
-    private data class ClassicUsage(val capacity: Int, val used: Int?)
-
-    private fun readClassicUsage(tag: Tag): ClassicUsage? = runCatching {
-        val mc = MifareClassic.get(tag) ?: return null
-        mc.connect()
-        mc.use {
-            val madKeyA = byteArrayOf(0xA0.toByte(),0xA1.toByte(),0xA2.toByte(),0xA3.toByte(),0xA4.toByte(),0xA5.toByte())
-            val defaultKey = byteArrayOf(0xFF.toByte(),0xFF.toByte(),0xFF.toByte(),0xFF.toByte(),0xFF.toByte(),0xFF.toByte())
-
-            // MAD directory (secteur 0 , blocs 1-2)
-            val dir: ByteArray? = runCatching {
-                if (mc.authenticateSectorWithKeyA(0, madKeyA) || mc.authenticateSectorWithKeyA(0, defaultKey)) {
-                    mc.readBlock(1) + mc.readBlock(2)
-                } else null
-            }.getOrNull()
-
-            val usedSectorsFromMad = mutableSetOf<Int>()
-            if (dir != null) {
-                for (s in 1 until mc.sectorCount.coerceAtMost(16)) {
-                    val i = (s - 1) * 2
-                    if (i + 1 < dir.size) {
-                        val a = dir[i].toInt() and 0xFF
-                        val b = dir[i + 1].toInt() and 0xFF
-                        if (((a shl 8) or b) != 0x0000) usedSectorsFromMad += s
-                    }
-                }
-            }
-
-            val keys = listOf(
-                defaultKey, madKeyA,
-                byteArrayOf(0xD3.toByte(),0xF7.toByte(),0xD3.toByte(),0xF7.toByte(),0xD3.toByte(),0xF7.toByte()),
-                byteArrayOf(0,0,0,0,0,0),
-                byteArrayOf(0xB0.toByte(),0xB1.toByte(),0xB2.toByte(),0xB3.toByte(),0xB4.toByte(),0xB5.toByte())
-            )
-
-            val sectorsToRead = if (usedSectorsFromMad.isNotEmpty()) usedSectorsFromMad.toList()
-            else (1 until mc.sectorCount).toList()
-
-            val stream = ArrayList<Byte>()
-            var capacityBytes = 0
-            var usedHeuristic = 0
-
-            fun isEmptyBlock(b: ByteArray): Boolean {
-                val all0 = b.all { it == 0x00.toByte() }
-                val allFF = b.all { it == 0xFF.toByte() }
-                return all0 || allFF
-            }
-
-            for (s in sectorsToRead) {
-                val authed = keys.any { k ->
-                    mc.authenticateSectorWithKeyA(s, k) || mc.authenticateSectorWithKeyB(s, k)
-                }
-                if (!authed) continue
-
-                val first = mc.sectorToBlock(s)
-                val count = mc.getBlockCountInSector(s)
-                val dataBlocks = (count - 1).coerceAtLeast(0)
-                capacityBytes += dataBlocks * MifareClassic.BLOCK_SIZE
-
-                for (b in 0 until dataBlocks) {
-                    val block = mc.readBlock(first + b)
-                    stream.addAll(block.toList())
-                    if (!isEmptyBlock(block)) usedHeuristic += block.size
-                }
-            }
-
-            if (capacityBytes == 0) return null
-
-            fun scanNdefLen(buf: List<Byte>): Int? {
-                var i = 0
-                val n = buf.size
-                while (i < n) {
-                    when (buf[i].toInt() and 0xFF) {
-                        0x00 -> i++
-                        0xFE -> return null
-                        0x03 -> {
-                            if (i + 1 >= n) return null
-                            val len = buf[i + 1].toInt() and 0xFF
-                            return if (len == 0xFF) {
-                                if (i + 3 >= n) null
-                                else (((buf[i + 2].toInt() and 0xFF) shl 8) or (buf[i + 3].toInt() and 0xFF))
-                            } else len
-                        }
-                        else -> {
-                            if (i + 1 >= n) return null
-                            val len = (buf[i + 1].toInt() and 0xFF)
-                            i += if (len == 0xFF) {
-                                if (i + 3 >= n) return null
-                                4 + (((buf[i + 2].toInt() and 0xFF) shl 8) or (buf[i + 3].toInt() and 0xFF))
-                            } else 2 + len
-                        }
-                    }
-                }
-                return null
-            }
-
-            val usedNdef = scanNdefLen(stream)?.coerceAtMost(capacityBytes)
-            val used = (usedNdef ?: if (usedSectorsFromMad.isNotEmpty()) {
-                usedSectorsFromMad.sumOf {
-                    val blks = mc.getBlockCountInSector(it)
-                    (blks - 1).coerceAtLeast(0) * MifareClassic.BLOCK_SIZE
-                }
-            } else usedHeuristic).coerceAtMost(capacityBytes)
-
-            ClassicUsage(capacity = capacityBytes, used = used)
-        }
-    }.getOrNull()
-
-    /* ---------- Historique : persistance JSON ---------- */
-
-    /** Construit un NDEF à partir de la liste UI. */
-    private fun toNdefMessage(entries: List<WriteEntry>): NdefMessage {
-        val recs: List<NdefRecord> = entries.mapNotNull { e ->
-            when (e.kind) {
-                EntryKind.URL -> e.value.takeIf { it.isNotBlank() }?.let {
-                    NdefRecord.createUri(it.toUri())
-                }
-                EntryKind.TEXT -> e.value.takeIf { it.isNotBlank() }?.let {
-                    NdefRecord.createTextRecord(null, it)
-                }
-                else -> null
-            }
-        }
-        return NdefMessage(recs.toTypedArray())
-    }
-
-    private fun saveInHistory(tag: SimpleTag) {
-        val now = System.currentTimeMillis()
-        val list = loadHistory().toMutableList()
-        val existingIdx = list.indexOfFirst { it.uidHex.equals(tag.uidHex, true) }
-        val existingFav = list.getOrNull(existingIdx)?.favorite ?: false
-        val entry = SavedTag(
-            uidHex = tag.uidHex,
-            name = tag.name,
-            typeLabel = tag.typeLabel,
-            typeDetail = tag.typeDetail,
-            total = tag.total,
-            used = tag.used,
-            locked = tag.locked,
-            savedAt = now,
-            favorite = existingFav
-        )
-        if (existingIdx >= 0) list[existingIdx] = entry else list.add(0, entry)
-        persistHistory(list)
-        history.value = list
-    }
-
-    fun toggleFavorite(uidHex: String, favorite: Boolean) {
-        val list = loadHistory().toMutableList()
-        val i = list.indexOfFirst { it.uidHex.equals(uidHex, true) }
-        if (i >= 0) {
-            val s = list[i]
-            list[i] = s.copy(favorite = favorite)
-            persistHistory(list)
-            history.value = list
-        }
-    }
-
-    private fun loadHistory(): List<SavedTag> {
-        val s = prefs.getString("history_json", "[]") ?: "[]"
-        return runCatching {
-            val arr = JSONArray(s)
-            (0 until arr.length()).mapNotNull { i ->
-                val o = arr.optJSONObject(i) ?: return@mapNotNull null
-                val td = o.optString("typeDetail").takeIf { it.isNotEmpty() }
-                SavedTag(
-                    uidHex = o.optString("uid"),
-                    name = o.optString("name"),
-                    typeLabel = o.optString("type"),
-                    typeDetail = td,
-                    total = o.optInt("total", 0),
-                    used = o.optInt("used", -1),
-                    locked = o.optBoolean("locked", false),
-                    savedAt = o.optLong("savedAt", 0L),
-                    favorite = o.optBoolean("favorite", false)
-                )
-            }
-        }.getOrElse { emptyList() }
-    }
-
-    private fun persistHistory(list: List<SavedTag>) {
-        val arr = JSONArray()
-        list.forEach { s ->
-            arr.put(
-                JSONObject()
-                    .put("uid", s.uidHex)
-                    .put("name", s.name)
-                    .put("type", s.typeLabel)
-                    .put("typeDetail", s.typeDetail ?: JSONObject.NULL)
-                    .put("total", s.total)
-                    .put("used", s.used)
-                    .put("locked", s.locked)
-                    .put("savedAt", s.savedAt)
-                    .put("favorite", s.favorite)
-            )
-        }
-        prefs.edit { putString("history_json", arr.toString()) }
+        return head + classic
     }
 }

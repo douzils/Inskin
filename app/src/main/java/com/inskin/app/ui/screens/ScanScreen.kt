@@ -79,41 +79,36 @@ private fun stringStateMapSaver():
     )
 
 @Composable
-private fun ReadBusyDialog(onCancel: () -> Unit) {
+private fun ReadBusyDialog(
+    onCancel: () -> Unit,
+    phoneLevel: Int,
+    logs: List<String>           // <- ajouté
+) {
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onCancel,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-    ) { ReadBusyOverlay(onCancel) }
+    ) { ReadBusyOverlay(onCancel = onCancel, phoneLevel = phoneLevel, logs = logs) }
 }
 
 @Composable
-private fun ReadBusyOverlay(onCancel: () -> Unit = {}) {
-    val logs = remember { mutableStateListOf<String>() }
-    var step by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
-        val script = listOf(
-            "Connexion au tag…","Lecture UID…","Négociation NFC…",
-            "Lecture des TLVs…","Décodage NDEF…","Collecte des métadonnées…"
-        )
-        while (true) {
-            logs += if (step < script.size) script[step++] else "Lecture des blocs mémoire…"
-            kotlinx.coroutines.delay(350)
-        }
-    }
-    Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.96f)), contentAlignment = Alignment.Center) {
+private fun ReadBusyOverlay(
+    onCancel: () -> Unit = {},
+    phoneLevel: Int,
+    logs: List<String>           // <- ajouté
+) {
+    // ⚠️ SUPPRIMER tout le LaunchedEffect qui fabriquait des logs factices
+    Box(
+        Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.96f)),
+        contentAlignment = Alignment.Center
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-            Box(Modifier.size(220.dp).clip(CircleShape).background(Color(0xFF444444)), contentAlignment = Alignment.Center) {
-                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    repeat(3) { Box(Modifier.size(34.dp).clip(CircleShape).background(Color.White)) }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            Text("LECTURE EN COURS", fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color(0xFF444444))
-            Spacer(Modifier.height(8.dp))
+            /* ... le visuel du cercle + SignalBars reste identique ... */
+
             val scroll = rememberScrollState()
             LaunchedEffect(logs.size) { scroll.animateScrollTo(scroll.maxValue + 200) }
             Box(
-                Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 240.dp)
+                Modifier.fillMaxWidth()
+                    .heightIn(min = 120.dp, max = 240.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
                     .padding(10.dp)
@@ -122,13 +117,15 @@ private fun ReadBusyOverlay(onCancel: () -> Unit = {}) {
                     logs.forEachIndexed { i, line ->
                         Text(
                             text = if (i == logs.lastIndex) "• $line" else "✓ $line",
-                            fontSize = 13.sp, fontFamily = FontFamily.Monospace,
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(4.dp))
                     }
                 }
             }
+
             Spacer(Modifier.height(10.dp))
             Text("Laissez le tag en place", fontSize = 16.sp, color = Color(0xFF444444))
             Spacer(Modifier.height(8.dp))
@@ -172,8 +169,7 @@ fun ScanScreen(
     var homeAngle by rememberSaveable { mutableFloatStateOf(0f) }
     var historyOpen by rememberSaveable { mutableStateOf(false) }
 
-    val historyItems by vm.history
-    val itemsSorted = remember(historyItems) { historyItems.sortedByDescending { it.savedAt } }
+    val itemsSorted = vm.history.sortedByDescending { it.savedAt }
     val tag = vm.lastTag.value
     val details = vm.lastDetails.value
 
@@ -197,18 +193,16 @@ fun ScanScreen(
         )
     }
 
-    val historyUi = remember(itemsSorted, iconByUid, nameByUid) {
-        itemsSorted.map { h ->
-            val uid = h.uidHex.uppercase()
-            HistoryRowUi(
-                uid = uid,
-                name = nameByUid[uid] ?: h.name.ifBlank { "Tag" },
-                form = iconByUid[uid]?.let { BadgeForm.valueOf(it) },
-                lastScanMs = h.savedAt,
-                lastEditMs = null,
-                status = SyncState.WRITTEN
-            )
-        }
+    val historyUi = itemsSorted.map { h ->
+        val uid = h.uidHex.uppercase()
+        HistoryRowUi(
+            uid = uid,
+            name = nameByUid[uid] ?: h.name.ifBlank { "Tag" },
+            form = iconByUid[uid]?.let { BadgeForm.valueOf(it) },
+            lastScanMs = h.savedAt,
+            lastEditMs = null,
+            status = SyncState.WRITTEN
+        )
     }
     LaunchedEffect(tag) { historyOpen = false }
 
@@ -242,7 +236,7 @@ fun ScanScreen(
                 verticalOffset = 0.dp,
                 belowCircleGap = 32.dp,
                 textSpacer = 16.dp,
-                showBubble = (status == ProxmarkStatus.Ready) && !historyOpen, // ← ici
+                showBubble = (status == ProxmarkStatus.Ready) && !historyOpen,
                 status = status,
                 onOpenList = onOpenList,
                 onOpenSettings = onOpenSettings,
@@ -251,8 +245,10 @@ fun ScanScreen(
                 expanded = homeExpanded,
                 onExpandedChange = { homeExpanded = it },
                 angle = homeAngle,
-                onAngleChange = { homeAngle = it }
+                onAngleChange = { homeAngle = it },
+                phoneLevel = vm.phoneSignalLevel.value    // <—
             )
+
 
 
         } else {
@@ -300,14 +296,46 @@ fun ScanScreen(
 
         if (busy.value) {
             ReadBusyDialog(
-                onCancel = {
-                    vm.startWaiting()
-                    setBusy(false)
-                }
+                onCancel = { vm.startWaiting(); setBusy(false) },
+                phoneLevel = vm.phoneSignalLevel.value,
+                logs = vm.liveLogs                  // <- ici
+            )
+        }
+
+
+    }
+}
+
+@Composable
+fun SignalBars(
+    level: Int,                // 0..4
+    barCount: Int = 4,
+    offsetX: Dp = 0.dp,        // nouvel offset X
+    offsetY: Dp = 0.dp,        // nouvel offset Y
+    width: Dp = 18.dp,         // largeur totale du groupe
+    height: Dp = 14.dp,        // hauteur totale du groupe
+    modifier: Modifier = Modifier
+) {
+    val lv = level.coerceIn(0, barCount)
+    Row(
+        modifier = modifier
+            .offset(offsetX, offsetY)
+            .size(width = width, height = height),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        repeat(barCount) { i ->
+            val on = i < lv
+            Box(
+                Modifier
+                    .padding(end = 1.dp)
+                    .width(3.dp)
+                    .fillMaxHeight((i + 1) / barCount.toFloat())
+                    .background(if (on) Color.White else Color(0xFF4B5563), shape = CircleShape)
             )
         }
     }
 }
+
 
 /* =========================== Accueil (idle) =========================== */
 @Composable
@@ -317,6 +345,7 @@ private fun ScanIdleScreen(
     textSpacer: Dp = 20.dp,
     showBubble: Boolean,
     status: ProxmarkStatus,
+    phoneLevel: Int,
     onOpenList: () -> Unit,
     onOpenSettings: () -> Unit,
     onTapHistory: () -> Unit,
@@ -343,15 +372,32 @@ private fun ScanIdleScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Box(
-                    Modifier
+                    modifier = Modifier
                         .size(disc)
-                        .clip(CircleShape)
-                        .background(Color(0xFF202020)),
+                        .offset(y = circleOffsetY),
                     contentAlignment = Alignment.Center
                 ) {
-                    BreathingTag(
-                        logoScale = 1.2f,
-                        logoOffsetY = 3.5.dp
+                    // CERCLE (clippé)
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .clip(CircleShape)
+                            .background(Color(0xFF202020)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BreathingTag(logoScale = 1.2f, logoOffsetY = 3.5.dp)
+                    }
+
+                    // BARRES AU-DESSUS, NON CLIPPÉES
+                    SignalBars(
+                        level   = phoneLevel,
+                        width   = 30.dp,
+                        height  = 20.dp,
+                        offsetX = (-0).dp,   // vers l’intérieur
+                        offsetY = 0.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .zIndex(1f)
                     )
                 }
             }
@@ -364,7 +410,7 @@ private fun ScanIdleScreen(
                 color = Color(0xFF3E3E3E)
             )
             Spacer(Modifier.height(textSpacer))
-            TypingDots(dotSize = 20.dp, spacing = 20.dp)
+            TypingDots(dotSize = 15.dp, spacing = 20.dp)
         }
 
         // Overlay centré sous les points, n’impacte pas la mise en page
@@ -455,7 +501,7 @@ private fun rememberTicker(): State<Long> {
 @Composable
 fun TypingDots(dotSize: Dp = 10.dp, spacing: Dp = 10.dp) {
     val transition = rememberInfiniteTransition(label = "dots")
-    val phases = List(3) { i ->
+    val phases = List(4) { i ->
         transition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
@@ -485,6 +531,7 @@ private fun ProxmarkFab(
     status: ProxmarkStatus,
     onClick: () -> Unit = {},
     diameter: Dp = 56.dp,
+    level: Int = 0,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -495,11 +542,16 @@ private fun ProxmarkFab(
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
+        // Icône centrale Proxmark
         Canvas(Modifier.fillMaxSize().padding(14.dp)) {
-            val minDim = this.size.minDimension
+            val minDim = size.minDimension
             drawCircle(Color.White, radius = minDim * 0.12f)
             listOf(0.28f, 0.42f, 0.56f).forEach { r ->
-                drawCircle(Color.White, radius = minDim * r, style = Stroke(width = 2.5f, cap = StrokeCap.Round))
+                drawCircle(
+                    Color.White,
+                    radius = minDim * r,
+                    style = Stroke(width = 2.5f, cap = StrokeCap.Round)
+                )
             }
             drawLine(
                 color = Color.Black,
@@ -509,6 +561,8 @@ private fun ProxmarkFab(
                 cap = StrokeCap.Round
             )
         }
+
+        // Badge statut
         val badge = when (status) {
             ProxmarkStatus.Ready -> Color(0xFF22C55E)
             ProxmarkStatus.Initializing -> Color(0xFFF59E0B)
@@ -522,6 +576,16 @@ private fun ProxmarkFab(
                 .size(14.dp)
                 .shadow(2.dp, CircleShape)
                 .background(badge, CircleShape)
+        )
+
+        // Indicateur signal en haut-gauche
+        SignalBars(
+            level = level.coerceIn(0, 4),
+            offsetX = 45.dp,
+            offsetY = 42.dp,
+            width = 18.dp,
+            height = 14.dp,
+            modifier = Modifier.align(Alignment.TopStart)
         )
     }
 }

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- NFC (si l’app lit des tags) -->
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.NFC"/>
 
-    <!-- USB Host pour le Proxmark -->
     <uses-feature
         android:name="android.hardware.usb.host"
         android:required="false" />
@@ -17,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Inskin">
 
-        <!-- Activité principale (rend l’app lançable) -->
+        <!-- Activité principale -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -27,7 +26,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Réception attach/detach USB + retour de la demande de permission -->
+        <!-- Réception attach/detach USB + retour de permission -->
         <receiver
             android:name=".usb.UsbAttachReceiver"
             android:enabled="true"
@@ -35,7 +34,6 @@
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"/>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED"/>
-                <!-- action custom utilisée par PendingIntent -->
                 <action android:name="com.inskin.app.USB_PERMISSION"/>
             </intent-filter>
         </receiver>

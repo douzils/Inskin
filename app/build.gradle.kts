@@ -44,6 +44,12 @@ android {
   }
 }
 
+ksp {
+  arg("room.schemaLocation", "$projectDir/schemas")
+  arg("room.incremental", "true")
+  arg("room.expandProjection", "true")
+}
+
 dependencies {
   // Compose BOM
   implementation(platform("androidx.compose:compose-bom:2024.10.01"))
@@ -55,7 +61,6 @@ dependencies {
   debugImplementation("androidx.compose.ui:ui-tooling")
   implementation("androidx.compose.foundation:foundation")
   implementation("androidx.compose.animation:animation")
-  implementation("androidx.compose.animation:animation-core")
   implementation("androidx.compose.material3:material3")
   implementation("androidx.compose.material:material-icons-extended")
 
@@ -65,20 +70,24 @@ dependencies {
   implementation("androidx.navigation:navigation-compose:2.8.0")
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.5")
 
-  // Material & datastore
-  implementation("com.google.android.material:material:1.12.0")
-  implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-  // Room
+  // Room (KSP)
+  implementation("androidx.room:room-runtime:2.6.1")
   implementation("androidx.room:room-ktx:2.6.1")
   ksp("androidx.room:room-compiler:2.6.1")
 
-  // Serialization
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
+  // Gson
+  implementation("com.google.code.gson:gson:2.11.0")
+
+  // DataStore
+  implementation("androidx.datastore:datastore-preferences:1.1.1")
 
   // USB serial + coroutines
   implementation("com.github.mik3y:usb-serial-for-android:3.7.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+  implementation("androidx.datastore:datastore-preferences:1.1.1")
+  implementation("com.google.android.material:material:1.12.0")
+  // Kotlin Serialization
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
 
   // Tests
   testImplementation("junit:junit:4.13.2")

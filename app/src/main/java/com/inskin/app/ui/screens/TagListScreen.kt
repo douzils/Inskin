@@ -2,21 +2,21 @@
 package com.inskin.app.ui.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.inskin.app.NfcViewModel
-import com.inskin.app.SavedTag
 
 @Composable
 fun TagListScreen(
@@ -24,9 +24,7 @@ fun TagListScreen(
     onBack: () -> Unit,
     onSelect: (String) -> Unit
 ) {
-    val tags by vm.history
-    val favorites = tags.filter { it.favorite }.sortedBy { it.name.lowercase() }
-    val others = tags.filter { !it.favorite }.sortedBy { it.name.lowercase() }
+    val sorted = vm.history.sortedByDescending { it.savedAt }
 
     Scaffold(
         topBar = {
@@ -34,46 +32,15 @@ fun TagListScreen(
                 title = { Text("Mes Tags") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Retour")
+                        Icon(Icons.Filled.ChevronLeft, contentDescription = null)
                     }
                 }
             )
         }
     ) { padding ->
-        Row(Modifier.fillMaxSize().padding(padding)) {
-            LazyColumn(Modifier.weight(1f)) {
-                if (favorites.isNotEmpty()) {
-                    item {
-                        Text("Favoris", style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(12.dp))
-                    }
-                    items(favorites, key = { it.uidHex }) { tag ->
-                        TagRow(tag, true,
-                            onSelect = { onSelect(tag.uidHex) },
-                            onToggleFav = { fav -> vm.toggleFavorite(tag.uidHex, fav) })
-                    }
-                }
-                item {
-                    Text("Tous", style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(12.dp))
-                }
-                items(others, key = { it.uidHex }) { tag ->
-                    TagRow(tag, false,
-                        onSelect = { onSelect(tag.uidHex) },
-                        onToggleFav = { fav -> vm.toggleFavorite(tag.uidHex, fav) })
-                }
-            }
-
-            // Colonne alphabétique à droite
-            LazyColumn(
-                Modifier.width(24.dp).fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ('A'..'Z').forEach { c ->
-                    item {
-                        Text(c.toString(), style = MaterialTheme.typography.labelSmall)
-                    }
-                }
+        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+            items(sorted, key = { it.uidHex }) { t ->
+                TagRow(uid = t.uidHex, time = t.savedAt) { onSelect(t.uidHex) }
             }
         }
     }
@@ -81,25 +48,15 @@ fun TagListScreen(
 
 @Composable
 private fun TagRow(
-    tag: SavedTag,
-    isFav: Boolean,
-    onSelect: () -> Unit,
-    onToggleFav: (Boolean) -> Unit
+    uid: String,
+    time: Long,
+    onSelect: () -> Unit
 ) {
     ListItem(
-        headlineContent = { Text(tag.name) },
-        supportingContent = { Text(tag.uidHex, style = MaterialTheme.typography.bodySmall) },
-        trailingContent = {
-            IconButton(onClick = { onToggleFav(!isFav) }) {
-                Icon(
-                    if (isFav) Icons.Filled.Star else Icons.Filled.StarBorder,
-                    contentDescription = "Favori",
-                    tint = if (isFav) Color(0xFFFFC107) else Color.Gray
-                )
-            }
-        },
+        headlineContent = { Text(uid) },
+        supportingContent = { Text(time.toString()) },
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .clickable(onClick = onSelect)
     )
 }

@@ -44,6 +44,7 @@ import com.inskin.app.R as AppR
 import androidx.navigation.NavController
 import com.inskin.app.NfcViewModel
 import androidx.compose.ui.res.painterResource
+import androidx.compose.runtime.mutableFloatStateOf
 
 /* ===== Modèles ===== */
 enum class EntryKind {
@@ -424,14 +425,13 @@ fun WriteTagRoute(
     vm: NfcViewModel,
     form: BadgeForm? = null
 ) {
-    val last = vm.lastTag.value
+    val last = vm.lastDetails.value
     WriteTagPage(
-        tagName = last?.name ?: "NFC Tag",
+        tagName = last?.uidHex ?: "NFC Tag",
         form = form,
-        locked = last?.locked == true,
+        locked = false,
         onBack = { navController.popBackStack() },
-        onStartWrite = vm::queueWrite,   // ✅ écrit tout de suite ou attend un tag
-        onDefinePassword = vm::askUnlock
+        onStartWrite = { _, done -> done(false) }      // stub: pas d’écriture réelle pour l’instant
     )
 }
 
