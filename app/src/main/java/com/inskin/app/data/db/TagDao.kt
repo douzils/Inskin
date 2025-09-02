@@ -28,4 +28,22 @@ interface TagDao {
 
     @Query("SELECT * FROM tag_dumps WHERE uidHex=:uid ORDER BY createdAt DESC")
     fun observeDumps(uid: String): Flow<List<TagDumpEntity>>
+
+    // Nouvelles DAO pour journal de lecture + NDEF
+    @Insert
+    suspend fun insertRead(read: TagReadEntity): Long
+
+    @Insert
+    suspend fun insertNdefRecords(records: List<TagNdefRecordEntity>)
+
+    @Query("SELECT * FROM tag_reads WHERE uidHex=:uid ORDER BY readAt DESC")
+    fun observeReads(uid: String): Flow<List<TagReadEntity>>
+
+    @Query("""
+        SELECT r.* FROM tag_ndef_records r
+        JOIN tag_reads t ON t.id = r.readId
+        WHERE t.uidHex=:uid
+        ORDER BY t.readAt DESC, r.orderIndex ASC
+    """)
+    fun observeNdefByUid(uid: String): Flow<List<TagNdefRecordEntity>>
 }
