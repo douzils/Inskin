@@ -14,9 +14,9 @@ import com.inskin.app.tags.NfcRfidInspectorRouter
 import com.inskin.app.tags.nfc.KeysRepository
 import com.inskin.app.usb.ProxmarkStatus
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.firstOrNull
 
 data class SimpleTag(
     val uidHex: String,
@@ -28,10 +28,14 @@ data class SimpleTag(
     val typeDetail: String? = null
 )
 
-data class SavedTag(val uidHex: String, val savedAt: Long, val name: String = "Tag")
-
+data class SavedTag(
+    val uidHex: String,
+    val savedAt: Long,
+    val name: String = "Tag",
+    val form: String? = null
+)
 class NfcViewModel(app: Application) : AndroidViewModel(app) {
-
+    val readingNow = mutableStateOf(false)
     // UI state
     val history = mutableStateListOf<SavedTag>()
     val lastTag = mutableStateOf<SimpleTag?>(null)
@@ -54,23 +58,70 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
 
     // DB repo
     private val repo: TagRepository by lazy {
-        val db = Room.databaseBuilder(getApplication(), AppDb::class.java, "inskin.db").build()
+        val db = Room.databaseBuilder(getApplication(), AppDb::class.java, "inskin.db")
+            .fallbackToDestructiveMigration()   // simple et efficace
+            .build()
+
         TagRepository(db.tagDao())
     }
 
+
     init {
-        // Charger l’historique persistant
         viewModelScope.launch(Dispatchers.IO) {
             repo.history().collect { list ->
                 withContext(Dispatchers.Main) {
                     history.clear()
-                    history.addAll(list.map { SavedTag(it.uidHex, it.lastSeen, it.name) })
+                    history.addAll(
+                        list.map { SavedTag(it.uidHex, it.lastSeen, it.name, it.form) }
+                    )
                 }
             }
         }
     }
 
+// ajoute dans la classe NfcViewModel
+
+    // NfcViewModel.kt
+    suspend fun getFormFor(uid: String): String? =
+        repo.getSnapshot(uid.uppercase())?.form
+
+    fun renameTag(uid: String, name: String) {
+        val u = uid.uppercase()
+        upsertHistory(u, name)
+        viewModelScope.launch(Dispatchers.IO) { repo.rename(u, name) }
+    }
+
+    fun setTagForm(uid: String, formKey: String?) {
+        val u = uid.uppercase()
+        viewModelScope.launch(Dispatchers.IO) { repo.setForm(u, formKey) }
+    }
+
+
+    fun openFromHistory(uid: String) {
+        val u = uid.uppercase()
+        viewModelScope.launch(Dispatchers.IO) {
+            // lecture ponctuelle (pas de collect infini)
+            val snap = repo.getSnapshot(u)
+            val det = repo.loadLatestDetails(u)
+
+            withContext(Dispatchers.Main) {
+                lastDetails.value = det
+                lastTag.value = SimpleTag(
+                    uidHex = u,
+                    name = snap?.name ?: "Tag",
+                    used = det?.rawReadableBytes ?: snap?.usedBytes ?: 0,
+                    total = det?.totalMemoryBytes ?: snap?.totalBytes ?: 0,
+                    locked = snap?.locked ?: false,
+                    typeLabel = det?.chipType ?: snap?.typeLabel ?: "NFC",
+                    typeDetail = det?.versionHex ?: det?.memoryLayout ?: (snap?.typeDetail ?: "")
+                )
+                liveLogs.add("Ouverture depuis l’historique")
+            }
+        }
+    }
+
     fun startWaiting() {
+        readingNow.value = false
         lastTag.value = null
         lastDetails.value = null
         canAskUnlock.value = false
@@ -79,6 +130,7 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
         liveLogs.clear()
         liveLogs.add("En attente d’un tag…")
     }
+
 
     private fun upsertHistory(uidHex: String, name: String) {
         val u = uidHex.uppercase()
@@ -89,9 +141,11 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun selectFromHistory(uidHex: String) {
+        readingNow.value = false   // ouverture offline
         val u = uidHex.uppercase()
-        val cached = detailsCache[u]
-        if (cached != null) {
+
+        // 1) cache mémoire
+        detailsCache[u]?.let { cached ->
             val used = cached.rawReadableBytes
                 ?: cached.classicSectors?.sumOf { s -> s.blocks.sumOf { b -> b.dataHex?.length?.div(2) ?: 0 } }
                 ?: 0
@@ -111,31 +165,31 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
 
-        // Fallback: snapshot DB
+        // 2) DB: charger dernier TagRead + snapshot pour l’en-tête
         viewModelScope.launch(Dispatchers.IO) {
-            repo.snapshot(u).collect { snap ->
-                if (snap != null) {
-                    withContext(Dispatchers.Main) {
-                        lastDetails.value = null
-                        lastTag.value = SimpleTag(
-                            uidHex = snap.uidHex,
-                            typeLabel = snap.typeLabel ?: "NFC",
-                            typeDetail = snap.typeDetail ?: "",
-                            name = snap.name,
-                            used = snap.usedBytes,
-                            total = snap.totalBytes,
-                            locked = snap.locked
-                        )
-                        liveLogs.add("Ouverture depuis l’historique (DB): $u")
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        val name = history.firstOrNull { it.uidHex.equals(u, true) }?.name ?: "Tag"
-                        lastDetails.value = null
-                        lastTag.value = SimpleTag(uidHex = u, typeLabel = "Historique", name = name)
-                        liveLogs.add("Historique: pas de snapshot DB pour $u")
-                    }
-                }
+            val det = repo.loadLatestDetails(u)         // <-- JSON complet TagDetails
+            val snap = repo.getSnapshot(u)              // <-- nom/type/flags
+            val used = det?.rawReadableBytes
+                ?: det?.classicSectors?.sumOf { s -> s.blocks.sumOf { b -> b.dataHex?.length?.div(2) ?: 0 } }
+                ?: snap?.usedBytes ?: 0
+            val total = det?.totalMemoryBytes ?: snap?.totalBytes ?: used
+            val typeLabel = det?.chipType ?: snap?.typeLabel ?: "NFC"
+            val typeDetail = det?.versionHex ?: det?.memoryLayout ?: snap?.typeDetail ?: ""
+            val displayName = snap?.name ?: det?.chipType ?: "Tag"
+
+            withContext(Dispatchers.Main) {
+                lastDetails.value = det
+                if (det != null) detailsCache[u] = det
+                lastTag.value = SimpleTag(
+                    uidHex = u,
+                    name = displayName,
+                    used = used,
+                    total = total,
+                    locked = snap?.locked ?: false,
+                    typeLabel = typeLabel,
+                    typeDetail = typeDetail
+                )
+                liveLogs.add("Ouverture depuis l’historique (complet): $u")
             }
         }
     }
@@ -159,7 +213,6 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun updateTag(tag: Tag) {
-        // hooks logs inspecteurs
         InspectorUtils.emitLog = { msg -> viewModelScope.launch { liveLogs.add(msg) } }
 
         val keysRepo = KeysRepository(getApplication())
@@ -171,59 +224,47 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch { liveLogs.add("Clé apprise $type S$sec = $key") }
         }
 
-        // overlay immédiat
         val uidHex = (tag.id ?: ByteArray(0)).toHex()
         lastTag.value = SimpleTag(uidHex = uidHex, typeLabel = "Lecture…")
+        readingNow.value = true
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val channel = com.inskin.app.tags.Channel.Android(tag)
                 val result = NfcRfidInspectorRouter.firstSupporting(channel).read(channel)
+                val d = result.details
+                val prev = repo.getSnapshot(d.uidHex)            // <— récupère nom/icône existants
+                val idNum = idFor(d.uidHex)
+                val typeLabel = d.chipType ?: "NFC Tag"
+                val displayName = prev?.name ?: "$typeLabel #$idNum"
 
                 withContext(Dispatchers.Main) {
-                    val d = result.details
                     lastDetails.value = d
-
-                    val key = d.uidHex.uppercase()
-                    detailsCache[key] = d
+                    detailsCache[d.uidHex.uppercase()] = d
 
                     val usedBytes = d.rawReadableBytes
                         ?: d.classicSectors?.sumOf { s -> s.blocks.sumOf { b -> b.dataHex?.length?.div(2) ?: 0 } }
                         ?: 0
 
-                    val idNum = idFor(d.uidHex)
-                    val typeLabel = d.chipType ?: "NFC Tag"
-                    val typeDetail = d.versionHex ?: d.memoryLayout ?: ""
-                    val displayName = "$typeLabel #$idNum"
-
                     lastTag.value = SimpleTag(
                         uidHex = d.uidHex,
                         typeLabel = typeLabel,
-                        typeDetail = typeDetail,
+                        typeDetail = d.versionHex ?: d.memoryLayout ?: "",
                         name = displayName,
                         used = usedBytes,
                         total = d.totalMemoryBytes ?: usedBytes,
                         locked = false
                     )
 
-                    // Historique UI + persistance du nom
                     upsertHistory(d.uidHex, displayName)
-                    viewModelScope.launch(Dispatchers.IO) { repo.rename(d.uidHex, displayName) }
-
-                    // Persist snapshot + dump
-                    viewModelScope.launch(Dispatchers.IO) {
-                        try {
-                            val dump = bestEffortDump(d)
-                            repo.saveRead(details = d, rawDump = dump, source = "android", format = "bin")
-                        } catch (_: Exception) { }
-                    }
-
-                    liveLogs.add("Lecture terminée: ${d.chipType}")
-                    canAskUnlock.value = false
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { liveLogs.add("Erreur: ${e.message}") }
+
+                // persistences
+                val dump = bestEffortDump(d)
+                repo.saveRead(details = d, rawDump = dump, source = "android", format = "bin")
+                repo.rename(d.uidHex, displayName)               // garde le nom
             } finally {
+                withContext(Dispatchers.Main) { readingNow.value = false }
                 InspectorUtils.emitLog = null
                 InspectorUtils.onKeyLearned = null
             }

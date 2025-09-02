@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,7 +43,6 @@ import androidx.compose.ui.zIndex
 import com.inskin.app.TagDetails
 import com.inskin.app.R as AppR
 
-
 @Composable
 fun TagHeaderPage(
     title: String,
@@ -57,8 +55,8 @@ fun TagHeaderPage(
     details: TagDetails?,
     onBack: () -> Unit,
     selectedForm: BadgeForm?,
-    onPickForm: (BadgeForm) -> Unit,
-    onRename: (String) -> Unit,
+    onPickForm: (BadgeForm) -> Unit,   // icône choisie -> sauvegarder via VM
+    onRename: (String) -> Unit,        // nouveau nom -> sauvegarder via VM
     onOpenHistory: () -> Unit = {},
     onOpenWrite: () -> Unit = {},
     onRequestGoDown: () -> Unit = {}
@@ -72,8 +70,6 @@ fun TagHeaderPage(
     val disc = remember(sw, sh) { (minOf(sw, sh) * 0.58f).coerceIn(128.dp, 360.dp) }
     val circleY = (-84).dp
 
-    val tagScroll = rememberScrollState()
-
     val writeLocked = details?.isNdefWritable == false
     val readLocked  = locked
     val fullyOpen   = !readLocked && !writeLocked
@@ -81,7 +77,6 @@ fun TagHeaderPage(
 
     Box(Modifier.fillMaxSize()) {
 
-        // Ligne de boutons en haut-droite : Historique + Retour
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -93,14 +88,12 @@ fun TagHeaderPage(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ChevronLeft, contentDescription = "Retour", tint = Color.Black)
             }
-            IconButton(onClick = onOpenHistory) {   // <-- utilisait onOpenList avant
+            IconButton(onClick = onOpenHistory) {
                 Icon(Icons.Filled.History, contentDescription = "Historique", tint = Color.Black)
             }
         }
 
-        Column(
-            Modifier.fillMaxSize().padding(top = 36.dp)
-        ) {
+        Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
             TagHeaderPageTitle(title = title, uid = uid, typeDetail = typeDetail, centered = true)
             Spacer(Modifier.height(6.dp))
 
@@ -117,8 +110,8 @@ fun TagHeaderPage(
                         .clip(CircleShape)
                         .background(Color(0xFF3E3E3E))
                         .combinedClickable(
-                            onClick = { /* pas d’options */ },
-                            onLongClick = { showFormDialog = true }
+                            onClick = { /* tap = rien */ },
+                            onLongClick = { showFormDialog = true } // ouvrir le sélecteur d’icône
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -158,7 +151,12 @@ fun TagHeaderPage(
                             .background(if (fullyOpen) Color(0xFF2ECC71) else Color(0xCC000000)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(if (fullyOpen) Icons.Filled.LockOpen else Icons.Filled.Lock, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(
+                            if (fullyOpen) Icons.Filled.LockOpen else Icons.Filled.Lock,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
                         if (!fullyOpen) {
                             val label = when {
                                 fullyLocked -> "RW"
@@ -172,7 +170,9 @@ fun TagHeaderPage(
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.align(Alignment.BottomEnd).offset(x = (-3).dp, y = (-2).dp)
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .offset(x = (-3).dp, y = (-2).dp)
                                 )
                             }
                         }
@@ -180,22 +180,21 @@ fun TagHeaderPage(
                 }
             }
 
-            // Stockage
+            // Nom + barre de stockage
             Column(
                 Modifier
                     .fillMaxWidth()
                     .offset(y = (-28).dp)
                     .padding(horizontal = 20.dp)
             ) {
-                var editingLocal by remember { mutableStateOf(editing) }
-                if (!editingLocal) {
+                if (!editing) {
                     Text(
                         text = name,
                         fontSize = 34.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
-                            .combinedClickable(onClick = { editing = true; editingLocal = true })
+                            .combinedClickable(onClick = { editing = true })
                     )
                 } else {
                     OutlinedTextField(
@@ -208,10 +207,11 @@ fun TagHeaderPage(
                             .widthIn(min = 200.dp, max = 320.dp),
                         trailingIcon = {
                             IconButton(onClick = {
-                                onRename(draft.trim().ifBlank { name })
+                                onRename(draft.trim().ifBlank { name })  // sauvegarde
                                 editing = false
-                                editingLocal = false
-                            }) { Icon(Icons.Filled.Check, contentDescription = null, tint = Color(0xFF34C759)) }
+                            }) {
+                                Icon(Icons.Filled.Check, contentDescription = null, tint = Color(0xFF34C759))
+                            }
                         }
                     )
                 }
@@ -268,12 +268,7 @@ fun TagHeaderPage(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Plus d’informations", fontSize = 18.sp, color = Color(0xFF2A2A2A))
-            Icon(
-                imageVector = Icons.Filled.ExpandMore,
-                contentDescription = null,
-                tint = Color.Black.copy(alpha = 0.75f),
-                modifier = Modifier.size(28.dp)
-            )
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = Color.Black.copy(alpha = 0.75f), modifier = Modifier.size(28.dp))
         }
     }
 
@@ -281,12 +276,14 @@ fun TagHeaderPage(
         FormPickerDialog(
             selected = selectedForm,
             onDismiss = { showFormDialog = false },
-            onPick = { picked -> onPickForm(picked); showFormDialog = false } // ← corrige la référence
+            onPick = { picked ->
+                onPickForm(picked)  // sauvegarde
+                showFormDialog = false
+            }
         )
     }
 }
 
-/* ---------- DIALOG FORMES ---------- */
 @Composable
 fun FormPickerDialog(
     selected: BadgeForm?,

@@ -12,6 +12,8 @@ import com.inskin.app.TagDetails
 import com.inskin.app.tags.*
 import com.inskin.app.toHex
 import kotlin.math.min
+import com.inskin.app.tags.toRecordInfos
+import com.inskin.app.tags.toInfo
 
 /**
  * Type 2 / NTAG / Ultralight:
@@ -135,7 +137,7 @@ object MifareUltralightInspector : TagInspector {
                 val msg = n.cachedNdefMessage ?: n.ndefMessage
                 if (msg != null) {
                     usedBytes = msg.toByteArray().size
-                    ndefRecords = msg.records.map { r -> decodeNdefRecord(r) }
+                    ndefRecords = msg.toRecordInfos()
                 }
             } catch (_: Exception) {
                 // ignore
@@ -248,31 +250,8 @@ object MifareUltralightInspector : TagInspector {
     private fun NfcA.safeXcv(cmd: ByteArray): ByteArray? =
         try { transceive(cmd) } catch (_: Exception) { null }
 
-    private fun decodeNdefRecord(r: android.nfc.NdefRecord): NdefRecordInfo {
-        return when {
-            r.tnf == android.nfc.NdefRecord.TNF_WELL_KNOWN && r.type.contentEquals(
-                android.nfc.NdefRecord.RTD_URI
-            ) -> {
-                val s = decodeUri(r.payload)
-                NdefRecordInfo("URI", s)
-            }
-            r.tnf == android.nfc.NdefRecord.TNF_WELL_KNOWN && r.type.contentEquals(
-                android.nfc.NdefRecord.RTD_TEXT
-            ) -> {
-                val s = decodeText(r.payload)
-                NdefRecordInfo("Text", s)
-            }
-            r.tnf == android.nfc.NdefRecord.TNF_MIME_MEDIA -> {
-                val mime = try { String(r.type, Charsets.US_ASCII) } catch (_: Exception) { "mime" }
-                val data = r.payload.toHex()
-                NdefRecordInfo("MIME:$mime", data)
-            }
-            else -> {
-                val kind = "TNF${r.tnf}:${try { String(r.type, Charsets.US_ASCII) } catch (_: Exception) { r.type.toHex() }}"
-                NdefRecordInfo(kind, r.payload.toHex())
-            }
-        }
-    }
+    private fun decodeNdefRecord(r: android.nfc.NdefRecord): NdefRecordInfo = r.toInfo()
+
 
     private fun decodeText(payload: ByteArray): String {
         if (payload.isEmpty()) return ""

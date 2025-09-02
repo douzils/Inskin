@@ -169,9 +169,19 @@ internal fun TagInfoPage(
                 ElevatedCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp)) {
                         ndefRecs.forEachIndexed { i, r ->
-                            Text("[$i] ${r.type} :", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                            Mono(r.value)
-                            if (i < ndefRecs.lastIndex) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            val label = r.type ?: r.mimeType ?: (r.uri?.let { "URI" })
+                            ?: r.tnf?.let { "TNF ${it}" } ?: "Record"
+                            val body = r.value ?: r.text ?: r.uri ?: r.payloadHex ?: "—"
+
+                            Text(
+                                "[$i] $label :",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            Mono(body)
+                            if (i < ndefRecs.lastIndex) {
+                                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            }
                         }
                     }
                 }
@@ -181,54 +191,6 @@ internal fun TagInfoPage(
                         Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = null)
                         Spacer(Modifier.width(6.dp)); Text("Ouvrir NDEF")
                     }
-                }
-            }
-        }
-
-        if (classicStats.isNotEmpty()) {
-            Section("MIFARE Classic / Accès") {
-                Rows(classicStats)
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showClassicPage = true }) {
-                        Icon(Icons.Filled.GridView, contentDescription = null)
-                        Spacer(Modifier.width(6.dp)); Text("Voir secteurs")
-                    }
-                }
-            }
-        }
-
-        if (rawRows.isNotEmpty() || formattedDump != null) {
-            Section("Données brutes") {
-                Rows(rawRows)
-                formattedDump?.let {
-                    KV("Dump (début)", "")
-                    ElevatedCard(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp)) { Mono(it) }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showDumpPage = true }) {
-                        Icon(Icons.Filled.Hexagon, contentDescription = null)
-                        Spacer(Modifier.width(6.dp)); Text("Ouvrir dump complet")
-                    }
-                }
-            }
-        }
-
-        if (advancedRows.isNotEmpty() || appsList.isNotEmpty() || filesList.isNotEmpty()) {
-            Section("Avancé") {
-                Rows(advancedRows)
-                if (appsList.isNotEmpty()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("Applications :", fontWeight = FontWeight.SemiBold)
-                    Bulleted(appsList)
-                }
-                if (filesList.isNotEmpty()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("Fichiers :", fontWeight = FontWeight.SemiBold)
-                    Bulleted(filesList)
                 }
             }
         }
@@ -323,16 +285,21 @@ private fun NdefRecordsView(ndefRecs: List<com.inskin.app.NdefRecordInfo>) {
     }
     LazyColumn(Modifier.fillMaxSize()) {
         items(ndefRecs) { r ->
+            val label = r.type ?: r.mimeType ?: (r.uri?.let { "URI" })
+            ?: r.tnf?.let { "TNF ${it}" } ?: "Record"
+            val body = r.value ?: r.text ?: r.uri ?: r.payloadHex ?: "—"
+
             ElevatedCard(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                 Column(Modifier.padding(12.dp)) {
-                    Text(r.type, fontWeight = FontWeight.SemiBold)
+                    Text(label, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(6.dp))
-                    Mono(r.value)
+                    Mono(body)
                 }
             }
         }
     }
 }
+
 
 @Composable
 private fun ClassicSectorsView(sectors: List<ClassicSectorInfo>) {

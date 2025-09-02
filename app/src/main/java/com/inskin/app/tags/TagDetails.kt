@@ -1,8 +1,6 @@
 // tags/TagDetails.kt
 package com.inskin.app
 
-data class NdefRecordInfo(val type: String, val value: String)
-
 data class ClassicBlockInfo(
     val sector: Int,
     val indexInSector: Int,
@@ -62,4 +60,17 @@ data class TagDetails(
     val classicSectors: List<ClassicSectorInfo>? = null,
     val classicReadableSectors: Int? = null,
     val classicDiscoveredKeys: Int? = null
+)
+data class NdefRecordInfo(
+    val tnf: Int? = null,
+    val type: String? = null,
+    val payloadHex: String? = null,
+    val idHex: String? = null,
+    val text: String? = null,
+    val lang: String? = null,
+    val uri: String? = null,
+    val mimeType: String? = null,
+    val sizeBytes: Int? = null,
+    // compat UI existante
+    val value: String? = null
 )

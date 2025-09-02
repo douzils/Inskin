@@ -65,7 +65,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
-
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 private const val L_FLOW = "ScanFlow"
@@ -195,23 +195,38 @@ fun ScanScreen(
 
     val historyUi = itemsSorted.map { h ->
         val uid = h.uidHex.uppercase()
+        val formKey = iconByUid[uid] ?: h.form
         HistoryRowUi(
             uid = uid,
             name = nameByUid[uid] ?: h.name.ifBlank { "Tag" },
-            form = iconByUid[uid]?.let { BadgeForm.valueOf(it) },
+            form = formKey?.let { BadgeForm.valueOf(it) },
             lastScanMs = h.savedAt,
             lastEditMs = null,
             status = SyncState.WRITTEN
         )
     }
+
     LaunchedEffect(tag) { historyOpen = false }
 
     val curUid = tag?.uidHex?.uppercase()
+    LaunchedEffect(curUid) {
+        val uid = curUid ?: return@LaunchedEffect
+        if (iconByUid[uid] == null) {
+            vm.getFormFor(uid)?.let { iconByUid[uid] = it }
+        }
+    }
+
     val detUid = details?.uidHex?.uppercase()
 
     val (setBusy, busy) = rememberBusyLatch(minMs = 500L)
-    val needBusyNow = tag != null && (details == null || detUid != curUid || vm.authBusy.value)
-    LaunchedEffect(needBusyNow, curUid, detUid, vm.authBusy.value) { setBusy(needBusyNow) }
+    val needBusyNow = vm.readingNow.value && tag != null &&
+            (details == null || detUid != curUid || vm.authBusy.value)
+    LaunchedEffect(needBusyNow, curUid, detUid, vm.authBusy.value) {
+        setBusy(needBusyNow)
+    }
+
+
+
 
     Box(
         Modifier
@@ -254,7 +269,10 @@ fun ScanScreen(
         } else {
             // Page Tag détecté
             val uidStr = curUid!!
-            val selectedForm = iconByUid[uidStr]?.let { BadgeForm.valueOf(it) }
+            val selectedForm =
+                iconByUid[uidStr]?.let { BadgeForm.valueOf(it) }
+                    ?: itemsSorted.firstOrNull { it.uidHex.equals(uidStr, true) }
+                        ?.form?.let { BadgeForm.valueOf(it) }
 
             val fromHistoryName = remember(itemsSorted, uidStr) {
                 itemsSorted.firstOrNull { it.uidHex.equals(uidStr, ignoreCase = true) }?.name
@@ -266,7 +284,7 @@ fun ScanScreen(
             TagDetectedScreen(
                 title = tag.typeLabel,
                 typeDetail = tag.typeDetail,
-                uid = uidStr.chunked(2).joinToString(":"),
+                uid = uidStr,
                 name = currentName,
                 used = tag.used,
                 total = tag.total,
@@ -278,9 +296,16 @@ fun ScanScreen(
                 onOpenHistory = { historyOpen = true },
                 onBack = { vm.startWaiting() },
                 selectedForm = selectedForm,
-                onPickForm = { form -> iconByUid[uidStr] = form.name },
-                onRename = { newName -> nameByUid[uidStr] = newName }
+                onPickForm = { form ->
+                    iconByUid[uidStr] = form.name   // UI
+                    vm.setTagForm(uidStr, form.name) // DB
+                },
+                onRename = { newName ->
+                    nameByUid[uidStr] = newName
+                    vm.renameTag(uidStr, newName)
+                }
             )
+
         }
 
         if (historyOpen) {
@@ -640,12 +665,18 @@ private fun UnlockDialog(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TagDetectedScreen(
-    title: String, typeDetail: String?, uid: String, name: String,
-    used: Int, total: Int, locked: Boolean,
-    details: com.inskin.app.TagDetails?, canAskUnlock: Boolean,
+    title: String,
+    typeDetail: String?,
+    uid: String,
+    name: String,
+    used: Int,
+    total: Int,
+    locked: Boolean,
+    details: com.inskin.app.TagDetails?,
+    canAskUnlock: Boolean,
     onAskUnlock: () -> Unit,
     onOpenWrite: () -> Unit,
-    onOpenHistory: () -> Unit,             // <- remplace onOpenList
+    onOpenHistory: () -> Unit,
     onBack: () -> Unit,
     selectedForm: BadgeForm?,
     onPickForm: (BadgeForm) -> Unit,
@@ -656,11 +687,13 @@ fun TagDetectedScreen(
     val snap = rememberSnapFlingBehavior(lazyListState = list)
 
     LazyColumn(state = list, flingBehavior = snap, modifier = Modifier.fillMaxSize()) {
-        item("page_header") {
+
+        // ⚠️ enlève le named param "key =" si ta version de Compose ne le supporte pas
+        item {
             Box(Modifier.fillParentMaxHeight().fillMaxWidth()) {
                 TagHeaderPage(
                     title = title,
-                    uid = uid,
+                    uid = uid.chunked(2).joinToString(":"), // si tu veux l’affichage AA:BB:..
                     name = name,
                     used = used,
                     total = total,
@@ -669,19 +702,25 @@ fun TagDetectedScreen(
                     details = details,
                     onBack = onBack,
                     selectedForm = selectedForm,
-                    onPickForm = onPickForm,
-                    onRename = onRename,
-                    onOpenHistory = onOpenHistory,          // <- utilise le bon callback
+                    onPickForm = onPickForm,    // pass-through
+                    onRename = onRename,        // pass-through
+                    onOpenHistory = onOpenHistory,
                     onOpenWrite = onOpenWrite,
                     onRequestGoDown = { scope.launch { list.animateScrollToItem(1) } }
                 )
             }
         }
-        item("page_info") {
+
+        item {
             Box(Modifier.fillParentMaxHeight().fillMaxWidth()) {
                 TagInfoPage(
-                    title = title, uid = uid, total = total, locked = locked, details = details,
-                    canAskUnlock = canAskUnlock, onAskUnlock = onAskUnlock,
+                    title = title,
+                    uid = uid,
+                    total = total,
+                    locked = locked,
+                    details = details,
+                    canAskUnlock = canAskUnlock,
+                    onAskUnlock = onAskUnlock,
                     onRequestGoUp = { scope.launch { list.animateScrollToItem(0) } }
                 )
             }
