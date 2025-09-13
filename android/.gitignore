@@ -1,0 +1,20 @@
+# Gradle/Build
+.gradle/
+**/build/
+.cxx/
+captures/
+
+# IDE
+.idea/
+*.iml
+
+# Local only
+local.properties
+
+# Keystores
+*.jks
+*.keystore
+
+# Misc
+*.log
+.DS_Store
