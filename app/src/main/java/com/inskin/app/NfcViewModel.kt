@@ -13,6 +13,8 @@ import com.inskin.app.tags.InspectorUtils
 import com.inskin.app.tags.NfcRfidInspectorRouter
 import com.inskin.app.tags.nfc.KeysRepository
 import com.inskin.app.usb.ProxmarkStatus
+import com.inskin.app.implants.ImplantDetector
+import com.inskin.app.implants.ImplantBadgeMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -232,11 +234,34 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val channel = com.inskin.app.tags.Channel.Android(tag)
                 val result = NfcRfidInspectorRouter.firstSupporting(channel).read(channel)
-                val d = result.details
+                val rawDetails = result.details
+
+                // Enrichit avec la détection d'implant Dangerous Things
+                val d = ImplantDetector.enrichWithImplantInfo(rawDetails)
+
+                // Log si un implant est détecté
+                if (d.detectedImplant != null) {
+                    viewModelScope.launch {
+                        liveLogs.add("✓ Implant détecté: ${d.detectedImplant.name}")
+                        liveLogs.add("  Confiance: ${(d.detectedImplant.confidence * 100).toInt()}%")
+                    }
+                }
+
                 val prev = repo.getSnapshot(d.uidHex)            // <— récupère nom/icône existants
                 val idNum = idFor(d.uidHex)
-                val typeLabel = d.chipType ?: "NFC Tag"
+
+                // Si c'est un implant détecté, utilise le nom de l'implant
+                val typeLabel = d.detectedImplant?.name ?: d.chipType ?: "NFC Tag"
                 val displayName = prev?.name ?: "$typeLabel #$idNum"
+
+                // Auto-sélection du BadgeForm si implant détecté et pas déjà défini
+                if (d.detectedImplant != null && prev?.form == null) {
+                    val suggestedForm = ImplantBadgeMapper.suggestBadgeForm(d.detectedImplant)
+                    repo.setForm(d.uidHex, suggestedForm.name)
+                    viewModelScope.launch {
+                        liveLogs.add("  Type auto: ${suggestedForm.label}")
+                    }
+                }
 
                 withContext(Dispatchers.Main) {
                     lastDetails.value = d

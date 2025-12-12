@@ -158,16 +158,94 @@ class ProxmarkManager(private val app: Context) {
         readerJob = scope.launch {
             try {
                 while (true) {
+                    // Commandes optimisées pour les implants
                     sendCmd("hf search");     readLoopAndEmit(3000); kotlinx.coroutines.delay(150)
                     sendCmd("hf 14a reader"); readLoopAndEmit(3000); kotlinx.coroutines.delay(150)
                     sendCmd("hf mfu info");   readLoopAndEmit(3000); kotlinx.coroutines.delay(150)
-                    sendCmd("hf 14a info");   readLoopAndEmit(3000); kotlinx.coroutines.delay(300)
-                    // sendCmd("lf search");  readLoopAndEmit(4000) // optionnel LF
+                    sendCmd("hf 14a info");   readLoopAndEmit(3000); kotlinx.coroutines.delay(150)
+                    // Commandes spécifiques pour implants
+                    sendCmd("hf 14a raw -s -c 60"); readLoopAndEmit(2000); kotlinx.coroutines.delay(150) // GET_VERSION pour NTAG
+                    // LF pour xEM et NExT (moins fréquent car plus lent)
+                    // sendCmd("lf search");  readLoopAndEmit(4000); kotlinx.coroutines.delay(500)
+                    kotlinx.coroutines.delay(300)
                 }
             } catch (t: Throwable) {
                 Log.e(TAG, "reader loop crashed", t)
             }
         }
+    }
+
+    /**
+     * Mode de lecture spécialisé pour les implants
+     * Optimisé pour détecter les implants Dangerous Things
+     */
+    fun startImplantMode() {
+        if (port == null) return
+        if (readerJob?.isActive == true) return
+        readerJob = scope.launch {
+            try {
+                while (true) {
+                    // Scan HF pour xNT, xM1, xAC, VivoKey
+                    sendCmd("hf search");     readLoopAndEmit(3000); kotlinx.coroutines.delay(200)
+                    sendCmd("hf 14a info");   readLoopAndEmit(3000); kotlinx.coroutines.delay(200)
+                    sendCmd("hf mfu info");   readLoopAndEmit(3000); kotlinx.coroutines.delay(200)
+                    // Test Mifare Classic pour xM1
+                    sendCmd("hf mf info");    readLoopAndEmit(3000); kotlinx.coroutines.delay(200)
+                    // Scan LF pour xEM et partie LF du NExT
+                    sendCmd("lf search");     readLoopAndEmit(4000); kotlinx.coroutines.delay(500)
+                    sendCmd("lf em 410x reader"); readLoopAndEmit(2000); kotlinx.coroutines.delay(300)
+                }
+            } catch (t: Throwable) {
+                Log.e(TAG, "implant mode crashed", t)
+            }
+        }
+    }
+
+    /**
+     * Lit un tag spécifique avec des commandes optimisées pour les implants
+     */
+    suspend fun readImplantDetails(): String? {
+        val p = port ?: return null
+        val result = StringBuilder()
+
+        try {
+            // Commandes de diagnostic détaillé
+            sendCmd("hf 14a info -v")
+            val info = readLoopOutput(3000)
+            result.append(info)
+
+            sendCmd("hf mfu info")
+            val mfuInfo = readLoopOutput(3000)
+            result.append("\n").append(mfuInfo)
+
+            return result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read implant details", e)
+            return null
+        }
+    }
+
+    /**
+     * Lit la sortie complète sans émettre d'événements
+     */
+    private fun readLoopOutput(timeoutMs: Long): String {
+        val p = port ?: return ""
+        val deadline = System.currentTimeMillis() + timeoutMs
+        val buf = ByteArray(4096)
+        val result = StringBuilder()
+
+        while (System.currentTimeMillis() < deadline) {
+            val n = try {
+                p.read(buf, 250)
+            } catch (t: Throwable) {
+                break
+            }
+            if (n > 0) {
+                result.append(String(buf, 0, n, StandardCharsets.US_ASCII))
+            }
+        }
+
+        return result.toString()
     }
 
     fun stopAutoRead() {
