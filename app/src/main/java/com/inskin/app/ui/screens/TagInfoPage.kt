@@ -48,6 +48,7 @@ import com.inskin.app.ClassicSectorInfo
 import com.inskin.app.TagDetails
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.inskin.app.implants.ImplantDetector
 
 @Composable
 internal fun TagInfoPage(
@@ -150,6 +151,18 @@ internal fun TagInfoPage(
     ) {
         Text("Informations détaillées", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(12.dp))
+
+        // Affiche la carte d'information si un implant est détecté
+        details?.detectedImplant?.let { implant ->
+            val healthStatus = remember(details) {
+                ImplantDetector.analyzeImplantHealth(details)
+            }
+            ImplantInfoCard(
+                implant = implant,
+                healthStatus = healthStatus,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
 
         if (ident.isNotEmpty()) Section("Identification") { Rows(ident) }
         if (system.isNotEmpty()) Section("Système & Mémoire") { Rows(system) }

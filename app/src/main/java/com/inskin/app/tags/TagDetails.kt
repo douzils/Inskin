@@ -59,7 +59,19 @@ data class TagDetails(
     val files: List<String>? = null,
     val classicSectors: List<ClassicSectorInfo>? = null,
     val classicReadableSectors: Int? = null,
-    val classicDiscoveredKeys: Int? = null
+    val classicDiscoveredKeys: Int? = null,
+    // Informations spécifiques aux implants Dangerous Things
+    val detectedImplant: ImplantInfo? = null
+)
+
+data class ImplantInfo(
+    val type: String,           // Type d'implant (xNT, xM1, etc.)
+    val name: String,           // Nom commercial
+    val frequency: String,      // Fréquence (13.56 MHz, 125 kHz)
+    val confidence: Float,      // Confiance de la détection (0.0 - 1.0)
+    val recommendations: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+    val useCases: List<String> = emptyList()
 )
 data class NdefRecordInfo(
     val tnf: Int? = null,

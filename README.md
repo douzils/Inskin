@@ -31,6 +31,17 @@ Application Android pour lecture, écriture, émulation et organisation de tags 
     * Paramètres (mode sombre, options diverses)
     * Périphériques externes (Proxmark, etc. – en cours de développement)
 
+* **🆕 Détection Automatique d'Implants Dangerous Things**
+
+    * Identification automatique de 9 types d'implants (xNT, xM1, xEM, xAC, NExT, FlexNT, etc.)
+    * Profils détaillés avec spécifications techniques
+    * Recommandations d'utilisation personnalisées
+    * Système de santé et diagnostic (compteur d'écritures)
+    * Auto-sélection du type de badge
+    * Support 40+ clés Mifare pour implants xM1
+    * Mode Proxmark3 optimisé pour implants
+    * Interface dédiée avec indicateurs visuels
+
 * **Page Tag**
 
     * Chevron retour
