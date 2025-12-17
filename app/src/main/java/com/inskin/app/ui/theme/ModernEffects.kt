@@ -27,7 +27,7 @@ fun Modifier.verticalGradient(
     .clip(shape)
     .background(
         brush = Brush.verticalGradient(
-            colorStops = colorStops
+            *colorStops.toTypedArray()
         )
     )
 
@@ -41,7 +41,7 @@ fun Modifier.horizontalGradient(
     .clip(shape)
     .background(
         brush = Brush.horizontalGradient(
-            colorStops = colorStops
+            *colorStops.toTypedArray()
         )
     )
 
