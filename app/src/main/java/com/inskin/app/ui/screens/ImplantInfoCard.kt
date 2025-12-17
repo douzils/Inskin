@@ -35,17 +35,31 @@ fun ImplantInfoCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    ElevatedCard(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = getImplantColor(implant.type).copy(alpha = 0.1f)
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
         )
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        0.0f to getImplantColor(implant.type).copy(alpha = 0.15f),
+                        0.5f to getImplantColor(implant.type).copy(alpha = 0.08f),
+                        1.0f to Color.Transparent
+                    )
+                )
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
             // En-tête avec icône et nom
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -143,6 +157,7 @@ fun ImplantInfoCard(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -156,26 +171,34 @@ private fun ConfidenceBadge(confidence: Float) {
         else -> Color(0xFFFF5722) to "Incertain"
     }
 
-    Surface(
-        color = color.copy(alpha = 0.2f),
-        shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    colors = listOf(
+                        color.copy(alpha = 0.25f),
+                        color.copy(alpha = 0.15f)
+                    )
+                )
+            )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Filled.Verified,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(18.dp)
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = text,
                 color = color,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -258,9 +281,16 @@ private fun HealthStatusRow(status: ImplantHealthStatus) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(statusData.color.copy(alpha = 0.1f))
-            .padding(12.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    colors = listOf(
+                        statusData.color.copy(alpha = 0.15f),
+                        statusData.color.copy(alpha = 0.05f)
+                    )
+                )
+            )
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

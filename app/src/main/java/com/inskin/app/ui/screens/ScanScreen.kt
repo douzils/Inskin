@@ -342,6 +342,17 @@ fun SignalBars(
     modifier: Modifier = Modifier
 ) {
     val lv = level.coerceIn(0, barCount)
+
+    // Couleur dynamique selon le niveau de signal
+    val signalColor = when (lv) {
+        0 -> Color(0xFF6B7280)  // Gris - pas de signal
+        1 -> Color(0xFFFF5722)  // Rouge - faible
+        2 -> Color(0xFFFFC107)  // Orange - moyen
+        3 -> Color(0xFF8BC34A)  // Vert clair - bon
+        4 -> Color(0xFF00BCD4)  // Cyan - excellent
+        else -> Color.Gray
+    }
+
     Row(
         modifier = modifier
             .offset(offsetX, offsetY)
@@ -350,12 +361,19 @@ fun SignalBars(
     ) {
         repeat(barCount) { i ->
             val on = i < lv
+            val barColor = if (on) signalColor else Color(0x40FFFFFF)
+
             Box(
                 Modifier
                     .padding(end = 1.dp)
                     .width(3.dp)
                     .fillMaxHeight((i + 1) / barCount.toFloat())
-                    .background(if (on) Color.White else Color(0xFF4B5563), shape = CircleShape)
+                    .background(barColor, shape = RoundedCornerShape(2.dp))
+                    .shadow(
+                        elevation = if (on) 4.dp else 0.dp,
+                        shape = RoundedCornerShape(2.dp),
+                        spotColor = if (on) signalColor.copy(alpha = 0.6f) else Color.Transparent
+                    )
             )
         }
     }
@@ -402,12 +420,19 @@ private fun ScanIdleScreen(
                         .offset(y = circleOffsetY),
                     contentAlignment = Alignment.Center
                 ) {
-                    // CERCLE (clippé)
+                    // CERCLE (clippé) avec dégradé moderne
                     Box(
                         Modifier
                             .matchParentSize()
                             .clip(CircleShape)
-                            .background(Color(0xFF202020)),
+                            .background(
+                                brush = Brush.radialGradient(
+                                    0.0f to Color(0xFF667EEA),
+                                    0.7f to Color(0xFF764BA2),
+                                    1.0f to Color(0xFF2D1B3D)
+                                )
+                            )
+                            .shadow(12.dp, CircleShape, spotColor = Color(0xFF764BA2).copy(alpha = 0.4f)),
                         contentAlignment = Alignment.Center
                     ) {
                         BreathingTag(logoScale = 1.2f, logoOffsetY = 3.5.dp)
@@ -429,10 +454,19 @@ private fun ScanIdleScreen(
 
             Spacer(Modifier.height(belowCircleGap))
             Text(
-                "SCANNEZ LE TAG",
+                text = "SCANNEZ LE TAG",
                 fontSize = 38.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF3E3E3E)
+                style = MaterialTheme.typography.displaySmall.copy(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF667EEA),
+                            Color(0xFF764BA2)
+                        )
+                    ),
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                )
             )
             Spacer(Modifier.height(textSpacer))
             TypingDots(dotSize = 15.dp, spacing = 20.dp)
@@ -538,14 +572,30 @@ fun TypingDots(dotSize: Dp = 10.dp, spacing: Dp = 10.dp) {
         )
     }
 
+    val dotColors = listOf(
+        Color(0xFF667EEA),
+        Color(0xFF6E7BD7),
+        Color(0xFF7B82C4),
+        Color(0xFF8889B1)
+    )
+
     Row(horizontalArrangement = Arrangement.spacedBy(spacing), verticalAlignment = Alignment.CenterVertically) {
-        phases.forEach { v ->
+        phases.forEachIndexed { index, v ->
             Box(
                 Modifier
                     .size(dotSize)
                     .clip(CircleShape)
-                    .graphicsLayer { alpha = 0.4f + 0.6f * v.value }
-                    .background(MaterialTheme.colorScheme.onSurface)
+                    .graphicsLayer {
+                        alpha = 0.4f + 0.6f * v.value
+                        scaleX = 0.8f + 0.2f * v.value
+                        scaleY = 0.8f + 0.2f * v.value
+                    }
+                    .background(dotColors.getOrElse(index) { dotColors[0] })
+                    .shadow(
+                        elevation = (4.dp * v.value),
+                        shape = CircleShape,
+                        spotColor = dotColors.getOrElse(index) { dotColors[0] }.copy(alpha = 0.5f)
+                    )
             )
         }
     }
