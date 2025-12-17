@@ -1,0 +1,79 @@
+name: Build APK
+
+on:
+  push:
+    branches: 
+      - 'claude/android-nfc-implant-app-*'
+      - 'main'
+      - 'master'
+  pull_request:
+  workflow_dispatch:  # Permet de lancer manuellement
+
+jobs:
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'gradle'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --stacktrace
+      
+    - name: Get version name
+      id: version
+      run: |
+        VERSION=$(grep "versionName" app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+        
+    - name: Rename APK
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        cp app/build/outputs/apk/debug/app-debug.apk \
+           inskin-v${VERSION}-debug.apk
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: inskin-v${{ steps.version.outputs.version }}-debug
+        path: inskin-v${{ steps.version.outputs.version }}-debug.apk
+        retention-days: 30
+        
+    - name: Display APK Info
+      run: |
+        echo "✅ APK compilé avec succès !"
+        echo "📦 Nom: inskin-v${{ steps.version.outputs.version }}-debug.apk"
+        ls -lh inskin-v${{ steps.version.outputs.version }}-debug.apk
+        
+  # Job optionnel pour créer une release automatiquement
+  release:
+    name: Create Release (if tag)
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download APK
+      uses: actions/download-artifact@v4
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          **/*.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
