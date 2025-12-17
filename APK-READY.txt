@@ -1,0 +1,21 @@
+🚀 COMPILATION AUTOMATIQUE DÉCLENCHÉE !
+
+✅ Le workflow GitHub Actions compile l'APK maintenant.
+
+📍 LIEN DIRECT pour télécharger l'APK :
+   https://github.com/douzils/Inskin/actions
+
+⏱️  Temps estimé : 5-10 minutes
+
+📲 INSTRUCTIONS :
+   1. Ouvrir le lien ci-dessus sur votre téléphone
+   2. Cliquer sur le workflow 'Build APK' (dernier)
+   3. Descendre à 'Artifacts'
+   4. Télécharger 'inskin-v2.0.0-debug'
+   5. Installer l'APK
+
+🎯 STATUT EN TEMPS RÉEL :
+   https://github.com/douzils/Inskin/actions/workflows/build-apk.yml
+
+✨ L'APK sera prêt dans quelques minutes !
+
