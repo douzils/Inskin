@@ -207,40 +207,47 @@ private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label
     }
 }
 
+private data class HealthStatusData(
+    val color: Color,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val text: String,
+    val description: String
+)
+
 @Composable
 private fun HealthStatusRow(status: ImplantHealthStatus) {
-    val (color, icon, text, description) = when (status) {
-        ImplantHealthStatus.Excellent -> listOf(
+    val statusData = when (status) {
+        ImplantHealthStatus.Excellent -> HealthStatusData(
             Color(0xFF4CAF50),
             Icons.Filled.CheckCircle,
             "Excellent",
             "< 10k écritures"
         )
-        ImplantHealthStatus.Good -> listOf(
+        ImplantHealthStatus.Good -> HealthStatusData(
             Color(0xFF8BC34A),
             Icons.Filled.CheckCircle,
             "Bon",
             "10k-50k écritures"
         )
-        ImplantHealthStatus.Fair -> listOf(
+        ImplantHealthStatus.Fair -> HealthStatusData(
             Color(0xFFFFC107),
             Icons.Filled.Info,
             "Correct",
             "50k-80k écritures"
         )
-        ImplantHealthStatus.Warning -> listOf(
+        ImplantHealthStatus.Warning -> HealthStatusData(
             Color(0xFFFF9800),
             Icons.Filled.Warning,
             "Attention",
             "80k-100k écritures"
         )
-        ImplantHealthStatus.Critical -> listOf(
+        ImplantHealthStatus.Critical -> HealthStatusData(
             Color(0xFFFF5722),
             Icons.Filled.Error,
             "Critique",
             "> 100k écritures"
         )
-        ImplantHealthStatus.Unknown -> listOf(
+        ImplantHealthStatus.Unknown -> HealthStatusData(
             Color.Gray,
             Icons.Filled.Help,
             "Inconnu",
@@ -252,26 +259,26 @@ private fun HealthStatusRow(status: ImplantHealthStatus) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.1f))
+            .background(statusData.color.copy(alpha = 0.1f))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = icon as androidx.compose.ui.graphics.vector.ImageVector,
+            imageVector = statusData.icon,
             contentDescription = null,
-            tint = color,
+            tint = statusData.color,
             modifier = Modifier.size(24.dp)
         )
         Spacer(Modifier.width(12.dp))
         Column {
             Text(
-                text = "État de santé: $text",
+                text = "État de santé: ${statusData.text}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = color
+                color = statusData.color
             )
             Text(
-                text = description as String,
+                text = statusData.description,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
