@@ -321,9 +321,11 @@ private fun PcStatsCard(
                 )
                 Text("PC", fontSize = 13.sp, color = MonochromeColors.lightGray2)
             }
-            Divider(
-                modifier = Modifier.width(1.dp).height(40.dp),
-                color = MonochromeColors.gray2
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(40.dp)
+                    .background(MonochromeColors.gray2)
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
