@@ -7,7 +7,7 @@ import java.util.UUID
  * Appareil PC enregistré pour le déverrouillage
  */
 data class PcDevice(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val name: String,
     val bluetoothAddress: String,
     val bluetoothName: String,
@@ -16,7 +16,7 @@ data class PcDevice(
     val isEnabled: Boolean = true,
     val requireNfcScan: Boolean = true, // Nécessite scan NFC pour débloquer
     val autoConnect: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long,
     val lastUnlocked: Long? = null,
     val unlockCount: Int = 0
 )
@@ -27,8 +27,8 @@ data class PcDevice(
 sealed class UnlockCommand {
     data class Unlock(val password: String) : UnlockCommand()
     data class TypePassword(val password: String) : UnlockCommand()
-    object WakeUp : UnlockCommand()
-    object Lock : UnlockCommand()
+    data object WakeUp : UnlockCommand()
+    data object Lock : UnlockCommand()
     data class Custom(val command: String) : UnlockCommand()
 
     fun toBytes(): ByteArray {
@@ -70,8 +70,8 @@ sealed class UnlockCommand {
  * État de la connexion Bluetooth
  */
 sealed class BluetoothConnectionState {
-    object Disconnected : BluetoothConnectionState()
-    object Connecting : BluetoothConnectionState()
+    data object Disconnected : BluetoothConnectionState()
+    data object Connecting : BluetoothConnectionState()
     data class Connected(val deviceName: String) : BluetoothConnectionState()
     data class Error(val message: String) : BluetoothConnectionState()
 }
@@ -80,8 +80,8 @@ sealed class BluetoothConnectionState {
  * Résultat d'une tentative de déverrouillage
  */
 sealed class UnlockResult {
-    object Success : UnlockResult()
+    data object Success : UnlockResult()
     data class Failed(val reason: String) : UnlockResult()
-    object NoPcConnected : UnlockResult()
-    object NoNfcScanned : UnlockResult()
+    data object NoPcConnected : UnlockResult()
+    data object NoNfcScanned : UnlockResult()
 }

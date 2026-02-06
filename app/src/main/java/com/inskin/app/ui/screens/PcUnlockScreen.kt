@@ -744,12 +744,14 @@ private fun AddPcDialog(
                         onClick = {
                             selectedDevice?.let { device ->
                                 val pc = PcDevice(
+                                    id = java.util.UUID.randomUUID().toString(),
                                     name = name.ifEmpty { device.name ?: "PC" },
                                     bluetoothAddress = device.address,
                                     bluetoothName = device.name ?: device.address,
                                     password = password,
                                     requireNfcScan = requireNfc,
-                                    color = accentColor.color
+                                    color = accentColor.color,
+                                    createdAt = System.currentTimeMillis()
                                 )
                                 onAdd(pc)
                             }
