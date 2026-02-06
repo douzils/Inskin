@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -108,10 +109,16 @@ fun TagHeaderPage(
                         .offset(y = disc + circleY)
                         .zIndex(8f)
                         .clip(CircleShape)
-                        .background(Color(0xFF3E3E3E))
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                0.0f to (selectedForm?.tint?.copy(alpha = 0.9f) ?: Color(0xFF667EEA)),
+                                0.7f to (selectedForm?.tint?.copy(alpha = 0.7f) ?: Color(0xFF764BA2)),
+                                1.0f to (selectedForm?.tint?.copy(alpha = 0.5f) ?: Color(0xFF2D1B3D))
+                            )
+                        )
                         .combinedClickable(
                             onClick = { /* tap = rien */ },
-                            onLongClick = { showFormDialog = true } // ouvrir le sélecteur d’icône
+                            onLongClick = { showFormDialog = true } // ouvrir le sélecteur d'icône
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -140,22 +147,32 @@ fun TagHeaderPage(
                     }
                 }
 
-                // Indicateur de verrouillage
+                // Indicateur de verrouillage moderne
                 Box(
                     modifier = Modifier.size(disc).offset(y = disc + circleY).zIndex(9f),
                     contentAlignment = Alignment.TopEnd
                 ) {
                     Box(
                         modifier = Modifier.offset(x = 10.dp, y = (-10).dp)
-                            .size(36.dp).clip(CircleShape)
-                            .background(if (fullyOpen) Color(0xFF2ECC71) else Color(0xCC000000)),
+                            .size(40.dp).clip(CircleShape)
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                    colors = if (fullyOpen)
+                                        listOf(Color(0xFF34C759), Color(0xFF30D158))
+                                    else
+                                        listOf(Color(0xFFFF5722), Color(0xFFE64A19))
+                                )
+                            )
+                            .then(
+                                Modifier.clip(CircleShape)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             if (fullyOpen) Icons.Filled.LockOpen else Icons.Filled.Lock,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                         if (!fullyOpen) {
                             val label = when {

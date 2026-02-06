@@ -1,0 +1,10 @@
+# Dépendances Python pour Inskin PC Unlock Server
+# Installation: pip install -r requirements.txt
+
+# Bluetooth
+pybluez==0.23
+# Alternative pour Windows 10+
+# pybluez-win10
+
+# Windows automation
+pywin32>=305

@@ -15,6 +15,7 @@ import com.inskin.app.tags.nfc.KeysRepository
 import com.inskin.app.usb.ProxmarkStatus
 import com.inskin.app.implants.ImplantDetector
 import com.inskin.app.implants.ImplantBadgeMapper
+import com.inskin.app.pcunlock.PcUnlockViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +43,9 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
     val history = mutableStateListOf<SavedTag>()
     val lastTag = mutableStateOf<SimpleTag?>(null)
     val lastDetails = mutableStateOf<TagDetails?>(null)
+
+    // PC Unlock integration
+    var pcUnlockViewModel: PcUnlockViewModel? = null
 
     val showAuthDialog = mutableStateOf(false)
     val authBusy = mutableStateOf(false)
@@ -244,6 +248,9 @@ class NfcViewModel(app: Application) : AndroidViewModel(app) {
                     viewModelScope.launch {
                         liveLogs.add("✓ Implant détecté: ${d.detectedImplant.name}")
                         liveLogs.add("  Confiance: ${(d.detectedImplant.confidence * 100).toInt()}%")
+
+                        // Déclencher le déverrouillage PC si activé
+                        pcUnlockViewModel?.handleNfcScan(d.uidHex)
                     }
                 }
 

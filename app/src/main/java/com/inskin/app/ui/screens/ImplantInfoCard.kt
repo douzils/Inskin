@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,17 +36,31 @@ fun ImplantInfoCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    ElevatedCard(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = getImplantColor(implant.type).copy(alpha = 0.1f)
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
         )
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        0.0f to getImplantColor(implant.type).copy(alpha = 0.15f),
+                        0.5f to getImplantColor(implant.type).copy(alpha = 0.08f),
+                        1.0f to Color.Transparent
+                    )
+                )
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
             // En-tête avec icône et nom
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -143,6 +158,7 @@ fun ImplantInfoCard(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -156,26 +172,34 @@ private fun ConfidenceBadge(confidence: Float) {
         else -> Color(0xFFFF5722) to "Incertain"
     }
 
-    Surface(
-        color = color.copy(alpha = 0.2f),
-        shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    colors = listOf(
+                        color.copy(alpha = 0.25f),
+                        color.copy(alpha = 0.15f)
+                    )
+                )
+            )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Filled.Verified,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(18.dp)
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = text,
                 color = color,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -207,40 +231,47 @@ private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label
     }
 }
 
+private data class HealthStatusData(
+    val color: Color,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val text: String,
+    val description: String
+)
+
 @Composable
 private fun HealthStatusRow(status: ImplantHealthStatus) {
-    val (color, icon, text, description) = when (status) {
-        ImplantHealthStatus.Excellent -> listOf(
+    val statusData = when (status) {
+        ImplantHealthStatus.Excellent -> HealthStatusData(
             Color(0xFF4CAF50),
             Icons.Filled.CheckCircle,
             "Excellent",
             "< 10k écritures"
         )
-        ImplantHealthStatus.Good -> listOf(
+        ImplantHealthStatus.Good -> HealthStatusData(
             Color(0xFF8BC34A),
             Icons.Filled.CheckCircle,
             "Bon",
             "10k-50k écritures"
         )
-        ImplantHealthStatus.Fair -> listOf(
+        ImplantHealthStatus.Fair -> HealthStatusData(
             Color(0xFFFFC107),
             Icons.Filled.Info,
             "Correct",
             "50k-80k écritures"
         )
-        ImplantHealthStatus.Warning -> listOf(
+        ImplantHealthStatus.Warning -> HealthStatusData(
             Color(0xFFFF9800),
             Icons.Filled.Warning,
             "Attention",
             "80k-100k écritures"
         )
-        ImplantHealthStatus.Critical -> listOf(
+        ImplantHealthStatus.Critical -> HealthStatusData(
             Color(0xFFFF5722),
             Icons.Filled.Error,
             "Critique",
             "> 100k écritures"
         )
-        ImplantHealthStatus.Unknown -> listOf(
+        ImplantHealthStatus.Unknown -> HealthStatusData(
             Color.Gray,
             Icons.Filled.Help,
             "Inconnu",
@@ -251,27 +282,34 @@ private fun HealthStatusRow(status: ImplantHealthStatus) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.1f))
-            .padding(12.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    colors = listOf(
+                        statusData.color.copy(alpha = 0.15f),
+                        statusData.color.copy(alpha = 0.05f)
+                    )
+                )
+            )
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = icon as androidx.compose.ui.graphics.vector.ImageVector,
+            imageVector = statusData.icon,
             contentDescription = null,
-            tint = color,
+            tint = statusData.color,
             modifier = Modifier.size(24.dp)
         )
         Spacer(Modifier.width(12.dp))
         Column {
             Text(
-                text = "État de santé: $text",
+                text = "État de santé: ${statusData.text}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = color
+                color = statusData.color
             )
             Text(
-                text = description as String,
+                text = statusData.description,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
