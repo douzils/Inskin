@@ -23,7 +23,11 @@ import com.inskin.app.ui.PreferencesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(vm: PreferencesViewModel, onBack: () -> Unit = {}) {
+fun SettingsScreen(
+    vm: PreferencesViewModel,
+    onBack: () -> Unit = {},
+    onOpenPcUnlock: () -> Unit = {}
+) {
     val dark by vm.darkTheme.collectAsState()
     var nfcSoundEnabled by remember { mutableStateOf(true) }
     var vibrationEnabled by remember { mutableStateOf(true) }
@@ -109,6 +113,23 @@ fun SettingsScreen(vm: PreferencesViewModel, onBack: () -> Unit = {}) {
                             iconGradient = listOf(Color(0xFF9C27B0), Color(0xFFBA68C8))
                         )
                     }
+                }
+            }
+
+            // Déverrouillage PC
+            item {
+                SettingsSectionHeader("Déverrouillage PC", Icons.Filled.Computer)
+            }
+
+            item {
+                SettingsCard {
+                    SettingsClickItem(
+                        icon = Icons.Filled.LockOpen,
+                        title = "Déverrouillage PC",
+                        subtitle = "Débloquer votre PC via NFC + Bluetooth",
+                        iconGradient = listOf(Color(0xFF00D9FF), Color(0xFF0080FF)),
+                        onClick = onOpenPcUnlock
+                    )
                 }
             }
 

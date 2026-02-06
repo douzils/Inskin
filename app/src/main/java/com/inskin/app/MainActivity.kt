@@ -23,17 +23,21 @@ import com.inskin.app.ui.screens.ScanScreen
 import com.inskin.app.ui.screens.SettingsScreen
 import com.inskin.app.ui.screens.TagListScreen
 import com.inskin.app.ui.screens.WriteTagRoute
+import com.inskin.app.ui.screens.PcUnlockScreen
 import com.inskin.app.ui.theme.InskinTheme
 import com.inskin.app.usb.ProxmarkLocator
 import com.inskin.app.usb.ProxmarkStatus
 import com.inskin.app.tags.InspectorUtils
 import com.inskin.app.tags.nfc.KeysRepository
+import com.inskin.app.pcunlock.PcUnlockViewModel
+import com.inskin.app.ui.theme.AccentColor
 import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
     private lateinit var vm: NfcViewModel
+    private lateinit var pcUnlockVm: PcUnlockViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +53,14 @@ class MainActivity : ComponentActivity() {
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[NfcViewModel::class.java]
+
+        pcUnlockVm = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[PcUnlockViewModel::class.java]
+
+        // Connecter les ViewModels pour le déverrouillage auto
+        vm.pcUnlockViewModel = pcUnlockVm
 
         val prefsVm = ViewModelProvider(this)[PreferencesViewModel::class.java]
 
@@ -75,7 +87,18 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable("settings") {
-                            SettingsScreen(vm = prefsVm, onBack = { nav.popBackStack() })
+                            SettingsScreen(
+                                vm = prefsVm,
+                                onBack = { nav.popBackStack() },
+                                onOpenPcUnlock = { nav.navigate("pcunlock") }
+                            )
+                        }
+                        composable("pcunlock") {
+                            PcUnlockScreen(
+                                accentColor = AccentColor.ELECTRIC_BLUE,
+                                onBack = { nav.popBackStack() },
+                                viewModel = pcUnlockVm
+                            )
                         }
                     }
                 }
