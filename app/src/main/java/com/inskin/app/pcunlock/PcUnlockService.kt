@@ -1,6 +1,7 @@
 package com.inskin.app.pcunlock
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
@@ -44,6 +45,7 @@ class PcUnlockService(private val context: Context) {
     /**
      * Vérifie si Bluetooth est disponible et activé
      */
+    @SuppressLint("MissingPermission")
     fun isBluetoothAvailable(): Boolean {
         return bluetoothAdapter != null && bluetoothAdapter.isEnabled
     }
@@ -61,6 +63,7 @@ class PcUnlockService(private val context: Context) {
     /**
      * Liste les appareils Bluetooth appairés
      */
+    @SuppressLint("MissingPermission")
     fun getPairedDevices(): List<BluetoothDevice> {
         if (!hasBluetoothPermissions() || bluetoothAdapter == null) {
             return emptyList()
@@ -77,6 +80,7 @@ class PcUnlockService(private val context: Context) {
     /**
      * Connecte à un PC via Bluetooth
      */
+    @SuppressLint("MissingPermission")
     suspend fun connectToPc(device: PcDevice): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             if (!hasBluetoothPermissions()) {

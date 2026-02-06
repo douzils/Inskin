@@ -1,5 +1,6 @@
 package com.inskin.app.pcunlock
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.BluetoothDevice
 import androidx.compose.runtime.mutableStateListOf
@@ -176,7 +177,7 @@ class PcUnlockViewModel(application: Application) : AndroidViewModel(application
      * Sauvegarde les PC enregistrés
      */
     private fun saveRegisteredPcs() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val jsonArray = JSONArray()
 
@@ -211,7 +212,7 @@ class PcUnlockViewModel(application: Application) : AndroidViewModel(application
      * Charge les PC enregistrés
      */
     private fun loadRegisteredPcs() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 if (!devicesFile.exists()) return@launch
 
@@ -225,15 +226,19 @@ class PcUnlockViewModel(application: Application) : AndroidViewModel(application
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
 
+                    val colorValue = try {
+                        obj.getString("color").toULong()
+                    } catch (e: Exception) {
+                        0xFF00D9FFUL // Default electric blue
+                    }
+
                     val pc = PcDevice(
                         id = obj.getString("id"),
                         name = obj.getString("name"),
                         bluetoothAddress = obj.getString("bluetoothAddress"),
                         bluetoothName = obj.getString("bluetoothName"),
                         password = obj.optString("password", ""),
-                        color = androidx.compose.ui.graphics.Color(
-                            obj.getString("color").toLong()
-                        ),
+                        color = androidx.compose.ui.graphics.Color(colorValue),
                         isEnabled = obj.getBoolean("isEnabled"),
                         requireNfcScan = obj.optBoolean("requireNfcScan", true),
                         autoConnect = obj.optBoolean("autoConnect", false),

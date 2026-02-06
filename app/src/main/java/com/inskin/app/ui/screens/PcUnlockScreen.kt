@@ -1,5 +1,6 @@
 package com.inskin.app.ui.screens
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -558,6 +559,7 @@ private fun EmptyStatePcList(accentColor: AccentColor) {
     }
 }
 
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddPcDialog(
