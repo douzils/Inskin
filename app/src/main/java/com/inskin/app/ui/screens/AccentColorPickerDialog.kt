@@ -111,7 +111,7 @@ fun AccentColorPickerDialog(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(AccentColor.values().toList()) { color ->
+                    items(AccentColor.entries.toList()) { color ->
                         ColorOption(
                             color = color,
                             isSelected = selectedColor == color,

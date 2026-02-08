@@ -39,7 +39,7 @@ enum class AccentColor(val color: Color, val displayName: String) {
 
     companion object {
         fun fromOrdinal(ordinal: Int): AccentColor {
-            return values().getOrNull(ordinal) ?: ELECTRIC_BLUE
+            return entries.getOrNull(ordinal) ?: ELECTRIC_BLUE
         }
     }
 }
