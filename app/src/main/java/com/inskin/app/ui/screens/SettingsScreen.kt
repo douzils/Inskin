@@ -91,7 +91,7 @@ fun SettingsScreen(
                             iconGradient = listOf(Color(0xFF4CAF50), Color(0xFF8BC34A))
                         )
 
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                         SettingsToggleItem(
                             icon = Icons.Filled.Vibration,
@@ -102,7 +102,7 @@ fun SettingsScreen(
                             iconGradient = listOf(Color(0xFF2196F3), Color(0xFF64B5F6))
                         )
 
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                         SettingsToggleItem(
                             icon = Icons.Filled.PhoneAndroid,
@@ -150,7 +150,7 @@ fun SettingsScreen(
                             iconGradient = listOf(Color(0xFFFF5722), Color(0xFFFF7043))
                         )
 
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                         SettingsClickItem(
                             icon = Icons.Filled.Key,
@@ -160,7 +160,7 @@ fun SettingsScreen(
                             onClick = { /* Gérer clés */ }
                         )
 
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                         SettingsClickItem(
                             icon = Icons.Filled.Storage,
@@ -229,7 +229,7 @@ fun SettingsScreen(
                                 lineHeight = 18.sp
                             )
 
-                            Divider()
+                            HorizontalDivider()
 
                             SettingsClickItem(
                                 icon = Icons.Filled.Update,

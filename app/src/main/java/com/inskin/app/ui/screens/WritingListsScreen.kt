@@ -218,11 +218,11 @@ private fun StatsCard(
                 label = "Listes",
                 accentColor = accentColor
             )
-            Divider(
+            Box(
                 modifier = Modifier
                     .width(1.dp)
-                    .height(40.dp),
-                color = MonochromeColors.gray2
+                    .height(40.dp)
+                    .background(MonochromeColors.gray2)
             )
             StatItem(
                 value = totalWrites.toString(),
